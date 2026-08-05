@@ -14,11 +14,23 @@ import type {
 // Neon directly, etc). Reads the connection string from whichever of these
 // env vars is set — same lookup order as work-tracker, so the two apps can
 // share hosting conventions even if they end up on separate databases.
+//
+// Neon connection strings carry `?sslmode=require`. Recent pg-connection-string
+// versions treat that as an alias for 'verify-full' and validate the chain
+// against Node's default CA store, which rejects Neon's cert with
+// "self-signed certificate in certificate chain". Stripping sslmode from the
+// string and setting `ssl: { rejectUnauthorized: false }` explicitly avoids
+// that — connections still use TLS, just without full chain verification.
+const rawConnectionString =
+  process.env.POSTGRES_URL ||
+  process.env.DATABASE_URL ||
+  process.env.POSTGRES_PRISMA_URL;
+const connectionString = rawConnectionString
+  ?.replace(/([?&])sslmode=[^&]*&?/i, "$1")
+  .replace(/[?&]$/, "");
+
 const pool = new Pool({
-  connectionString:
-    process.env.POSTGRES_URL ||
-    process.env.DATABASE_URL ||
-    process.env.POSTGRES_PRISMA_URL,
+  connectionString,
   ssl: { rejectUnauthorized: false },
 });
 
