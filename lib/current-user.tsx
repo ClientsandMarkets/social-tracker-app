@@ -7,7 +7,12 @@
 // four-person team with no approval workflow.
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { EDITORS, type Editor } from "./types";
+import { isEditorName } from "./editors";
+
+// Re-exported for any existing client-side imports — the actual logic now
+// lives in lib/editors.ts (a plain module, not "use client") so server-side
+// API routes can safely import it too. See that file for why this moved.
+export { isEditorName };
 
 const STORAGE_KEY = "sct.currentUser";
 
@@ -22,10 +27,6 @@ const CurrentUserContext = createContext<Ctx>({
   isEditor: false,
   setUser: () => {},
 });
-
-export function isEditorName(name: string | null): name is Editor {
-  return !!name && (EDITORS as readonly string[]).includes(name);
-}
 
 export function CurrentUserProvider({ children }: { children: React.ReactNode }) {
   const [user, setUserState] = useState<string | null>(null);

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { updateHoliday } from "@/lib/db";
 import { isWeekendDate } from "@/lib/holiday-seed";
-import { isEditorName } from "@/lib/current-user";
+import { isEditorName } from "@/lib/editors";
 export const dynamic = "force-dynamic";
 
 // Used for two things: correcting a post_trigger editorial call, and filling

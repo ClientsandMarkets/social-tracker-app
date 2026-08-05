@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { listHolidays, createHoliday } from "@/lib/db";
 import { ensureSeeded } from "@/lib/seed";
 import { isWeekendDate } from "@/lib/holiday-seed";
-import { isEditorName } from "@/lib/current-user";
+import { isEditorName } from "@/lib/editors";
 export const dynamic = "force-dynamic";
 
 export async function GET() {

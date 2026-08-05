@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { computeSuggestions, triggerTag } from "@/lib/suggestions";
 import { dismissSuggestion, createPost, listBacklog } from "@/lib/db";
-import { isEditorName } from "@/lib/current-user";
+import { isEditorName } from "@/lib/editors";
 export const dynamic = "force-dynamic";
 
 export async function GET() {

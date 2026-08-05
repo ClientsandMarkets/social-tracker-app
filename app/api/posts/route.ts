@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { listPosts, createPost, markBacklogUsed } from "@/lib/db";
 import { ensureSeeded } from "@/lib/seed";
 import { checkCaptionStyle } from "@/lib/style-check";
-import { isEditorName } from "@/lib/current-user";
+import { isEditorName } from "@/lib/editors";
 export const dynamic = "force-dynamic";
 
 export async function GET() {

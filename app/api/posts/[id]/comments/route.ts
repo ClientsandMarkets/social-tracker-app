@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { listComments, addComment } from "@/lib/db";
-import { isEditorName } from "@/lib/current-user";
+import { isEditorName } from "@/lib/editors";
 export const dynamic = "force-dynamic";
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {

@@ -6,6 +6,7 @@ import { useCurrentUser } from "@/lib/current-user";
 import PipelineHealthStrip from "@/components/PipelineHealthStrip";
 import SuggestionsPanel from "@/components/SuggestionsPanel";
 import PostForm from "@/components/PostForm";
+import { groupHolidaysForCalendar } from "@/lib/holiday-display";
 import type { Post, Holiday, RegulatoryDate, EventRow } from "@/lib/types";
 
 const STATUS_DOT: Record<Post["status"], string> = {
@@ -19,8 +20,17 @@ const STATUS_DOT: Record<Post["status"], string> = {
 function monthLabel(d: Date) {
   return d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
 }
+// Formats using the SAME local calendar fields the grid was built from
+// (getFullYear/getMonth/getDate) — never .toISOString(), which converts to
+// UTC and silently shifts the date back a day for any timezone ahead of UTC
+// (e.g. IST). That mismatch was why every clicked date opened the form on
+// the prior day, and why Aug 15 holidays visually landed under the Aug 16
+// cell.
 function toISODate(d: Date) {
-  return d.toISOString().slice(0, 10);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 export default function CalendarPage() {
@@ -68,10 +78,12 @@ export default function CalendarPage() {
     });
   }, [cursor]);
 
+  const displayHolidays = useMemo(() => groupHolidaysForCalendar(holidays), [holidays]);
+
   function entriesFor(dateStr: string) {
     return {
       posts: posts.filter((p) => p.scheduled_date === dateStr),
-      holidays: holidays.filter((h) => h.date === dateStr),
+      holidays: displayHolidays.filter((h) => h.date === dateStr),
       regulatory: regulatory.filter((r) => r.date === dateStr),
       events: events.filter((e) => e.event_date === dateStr),
     };
@@ -172,8 +184,8 @@ export default function CalendarPage() {
                 <div className="space-y-0.5">
                   {dayHolidays.map((h) => (
                     <div
-                      key={h.id}
-                      title={`${h.occasion}${h.location ? ` — ${h.location}` : ""} (${h.status_at_location})`}
+                      key={h.key}
+                      title={h.tooltip}
                       className="flex items-center gap-1 truncate rounded bg-violet-50 px-1 py-0.5 text-[10px] text-violet-700"
                     >
                       <Gift className="h-2.5 w-2.5 shrink-0" />
