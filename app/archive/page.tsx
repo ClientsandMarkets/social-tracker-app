@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Download, Trash2, ExternalLink } from "lucide-react";
 import { useCurrentUser } from "@/lib/current-user";
-import { PLATFORMS, REGIONS, EDITORS, type Post } from "@/lib/types";
+import { CATEGORIES, PLATFORMS, REGIONS, EDITORS, type Post } from "@/lib/types";
 
 export default function ArchivePage() {
   const { user, isEditor } = useCurrentUser();
@@ -12,6 +12,7 @@ export default function ArchivePage() {
 
   const [platform, setPlatform] = useState("");
   const [region, setRegion] = useState("");
+  const [category, setCategory] = useState("");
   const [tag, setTag] = useState("");
   const [creator, setCreator] = useState("");
   const [from, setFrom] = useState("");
@@ -33,17 +34,19 @@ export default function ArchivePage() {
     return posts
       .filter((p) => !platform || p.platforms.includes(platform as never))
       .filter((p) => !region || p.region === region)
+      .filter((p) => !category || p.category === category)
       .filter((p) => !tag || p.tags.some((t) => t.toLowerCase().includes(tag.toLowerCase())))
       .filter((p) => !creator || p.owner === creator || p.posted_by === creator)
       .filter((p) => !from || p.scheduled_date >= from)
       .filter((p) => !to || p.scheduled_date <= to)
       .sort((a, b) => (a.scheduled_date < b.scheduled_date ? 1 : -1));
-  }, [posts, platform, region, tag, creator, from, to]);
+  }, [posts, platform, region, category, tag, creator, from, to]);
 
   function exportUrl() {
     const params = new URLSearchParams();
     if (platform) params.set("platform", platform);
     if (region) params.set("region", region);
+    if (category) params.set("category", category);
     if (tag) params.set("tag", tag);
     if (creator) params.set("creator", creator);
     if (from) params.set("from", from);
@@ -91,6 +94,13 @@ export default function ArchivePage() {
           </select>
         </label>
         <label className="flex flex-col gap-1 text-xs font-medium text-zinc-500">
+          Category
+          <select value={category} onChange={(e) => setCategory(e.target.value)} className="rounded-md border border-line px-2 py-1.5 text-sm">
+            <option value="">All</option>
+            {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </label>
+        <label className="flex flex-col gap-1 text-xs font-medium text-zinc-500">
           Creator
           <select value={creator} onChange={(e) => setCreator(e.target.value)} className="rounded-md border border-line px-2 py-1.5 text-sm">
             <option value="">All</option>
@@ -117,6 +127,7 @@ export default function ArchivePage() {
             <tr>
               <th className="px-3 py-2">Date live</th>
               <th className="px-3 py-2">Caption</th>
+              <th className="px-3 py-2">Category</th>
               <th className="px-3 py-2">Creator</th>
               <th className="px-3 py-2">Posted by</th>
               <th className="px-3 py-2">Link</th>
@@ -124,14 +135,15 @@ export default function ArchivePage() {
             </tr>
           </thead>
           <tbody>
-            {loading && <tr><td colSpan={6} className="px-3 py-6 text-center text-zinc-400">Loading…</td></tr>}
+            {loading && <tr><td colSpan={7} className="px-3 py-6 text-center text-zinc-400">Loading…</td></tr>}
             {!loading && filtered.length === 0 && (
-              <tr><td colSpan={6} className="px-3 py-6 text-center text-zinc-400">Nothing archived yet.</td></tr>
+              <tr><td colSpan={7} className="px-3 py-6 text-center text-zinc-400">Nothing archived yet.</td></tr>
             )}
             {filtered.map((p) => (
               <tr key={p.id} className="border-b border-line last:border-0 hover:bg-zinc-50">
                 <td className="whitespace-nowrap px-3 py-2">{p.scheduled_date}</td>
                 <td className="max-w-md truncate px-3 py-2" title={p.caption}>{p.caption || "—"}</td>
+                <td className="px-3 py-2">{p.category || "—"}</td>
                 <td className="px-3 py-2">{p.owner}</td>
                 <td className="px-3 py-2">{p.posted_by || "—"}</td>
                 <td className="px-3 py-2">

@@ -4,12 +4,13 @@ import { useEffect, useState } from "react";
 import { AlertTriangle, Loader2, Paperclip, X } from "lucide-react";
 import { useCurrentUser } from "@/lib/current-user";
 import { checkCaptionStyle } from "@/lib/style-check";
-import { PLATFORMS, REGIONS, STATUSES, type Platform, type Post, type Region, type PostStatus, type BacklogItem } from "@/lib/types";
+import { CATEGORIES, PLATFORMS, REGIONS, STATUSES, type Category, type Platform, type Post, type Region, type PostStatus, type BacklogItem } from "@/lib/types";
 
 export type PostFormState = {
   platforms: Platform[];
   scheduled_date: string;
   status: PostStatus;
+  category: Category | "";
   caption: string;
   creative_notes: string;
   collateral_url: string;
@@ -27,6 +28,7 @@ export function emptyPostForm(defaultOwner: string): PostFormState {
     platforms: [],
     scheduled_date: new Date().toISOString().slice(0, 10),
     status: "Planned",
+    category: "",
     caption: "",
     creative_notes: "",
     collateral_url: "",
@@ -45,6 +47,7 @@ export function postToForm(p: Post): PostFormState {
     platforms: p.platforms || [],
     scheduled_date: p.scheduled_date,
     status: p.status,
+    category: p.category || "",
     caption: p.caption || "",
     creative_notes: p.creative_notes || "",
     collateral_url: p.collateral_url || "",
@@ -139,6 +142,7 @@ export default function PostForm({
         ...form,
         tags: form.tags.split(",").map((t) => t.trim()).filter(Boolean),
         region: form.region || null,
+        category: form.category || null,
       };
       const url = editing ? `/api/posts/${editing.id}` : "/api/posts";
       const method = editing ? "PATCH" : "POST";
@@ -221,6 +225,22 @@ export default function PostForm({
             {form.status === "Posted" && (
               <span className="text-xs text-zinc-500">Manual flip only — this archives the post immediately.</span>
             )}
+          </label>
+
+          <label className="flex flex-col gap-1 text-sm">
+            Category
+            <select
+              value={form.category}
+              onChange={(e) => setForm({ ...form, category: e.target.value as Category })}
+              className="rounded-md border border-line px-2 py-1.5 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+            >
+              <option value="">—</option>
+              {CATEGORIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
           </label>
 
           <label className="flex flex-col gap-1 text-sm sm:col-span-2">

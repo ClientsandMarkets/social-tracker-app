@@ -206,11 +206,11 @@ export default function CalendarPage() {
                         e.stopPropagation();
                         openEdit(p);
                       }}
-                      title={p.caption}
+                      title={`${p.category ? `[${p.category}] ` : ""}${p.caption || "(no caption)"}`}
                       className="flex items-center gap-1 truncate rounded border border-line bg-zinc-50 px-1 py-0.5 text-[10px] text-ink hover:bg-zinc-100"
                     >
                       <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${STATUS_DOT[p.status]}`} />
-                      {p.caption || "(no caption)"}
+                      {p.category ? `[${p.category}] ` : ""}{p.caption || "(no caption)"}
                     </div>
                   ))}
                 </div>

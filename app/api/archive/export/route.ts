@@ -10,6 +10,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const platform = searchParams.get("platform");
   const region = searchParams.get("region");
+  const category = searchParams.get("category");
   const tag = searchParams.get("tag");
   const creator = searchParams.get("creator");
   const from = searchParams.get("from");
@@ -20,6 +21,7 @@ export async function GET(req: NextRequest) {
     if (!p.archived_at) return false;
     if (platform && !(p.platforms || []).includes(platform as never)) return false;
     if (region && p.region !== region) return false;
+    if (category && p.category !== category) return false;
     if (tag && !(p.tags || []).includes(tag)) return false;
     if (creator && p.owner !== creator && p.posted_by !== creator) return false;
     if (from && p.scheduled_date < from) return false;
@@ -30,6 +32,7 @@ export async function GET(req: NextRequest) {
   const rows = archived.map((p) => ({
     "Date live": p.scheduled_date,
     Caption: p.caption,
+    Category: p.category || "",
     Creator: p.owner,
     Link: p.post_live_link || "",
   }));

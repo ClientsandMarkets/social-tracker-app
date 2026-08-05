@@ -6,7 +6,7 @@ import { useCurrentUser } from "@/lib/current-user";
 import PostForm from "@/components/PostForm";
 import StatusBadge from "@/components/StatusBadge";
 import PipelineHealthStrip from "@/components/PipelineHealthStrip";
-import { PLATFORMS, REGIONS, STATUSES, EDITORS, type Post } from "@/lib/types";
+import { CATEGORIES, PLATFORMS, REGIONS, STATUSES, EDITORS, type Post } from "@/lib/types";
 
 export default function ListPage() {
   const { user, isEditor } = useCurrentUser();
@@ -17,6 +17,7 @@ export default function ListPage() {
 
   const [platform, setPlatform] = useState("");
   const [status, setStatus] = useState("");
+  const [category, setCategory] = useState("");
   const [tag, setTag] = useState("");
   const [creator, setCreator] = useState("");
   const [region, setRegion] = useState("");
@@ -39,18 +40,20 @@ export default function ListPage() {
       .filter((p) => !p.archived_at) // archive lives on its own page
       .filter((p) => !platform || p.platforms.includes(platform as never))
       .filter((p) => !status || p.status === status)
+      .filter((p) => !category || p.category === category)
       .filter((p) => !tag || p.tags.some((t) => t.toLowerCase().includes(tag.toLowerCase())))
       .filter((p) => !creator || p.owner === creator)
       .filter((p) => !region || p.region === region)
       .filter((p) => !from || p.scheduled_date >= from)
       .filter((p) => !to || p.scheduled_date <= to)
       .sort((a, b) => (a.scheduled_date < b.scheduled_date ? -1 : 1));
-  }, [posts, platform, status, tag, creator, region, from, to]);
+  }, [posts, platform, status, category, tag, creator, region, from, to]);
 
-  const hasFilters = platform || status || tag || creator || region || from || to;
+  const hasFilters = platform || status || category || tag || creator || region || from || to;
   function clearFilters() {
     setPlatform("");
     setStatus("");
+    setCategory("");
     setTag("");
     setCreator("");
     setRegion("");
@@ -123,6 +126,15 @@ export default function ListPage() {
           </select>
         </label>
         <label className="flex flex-col gap-1 text-xs font-medium text-zinc-500">
+          Category
+          <select value={category} onChange={(e) => setCategory(e.target.value)} className="rounded-md border border-line px-2 py-1.5 text-sm">
+            <option value="">All</option>
+            {CATEGORIES.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+        </label>
+        <label className="flex flex-col gap-1 text-xs font-medium text-zinc-500">
           Region
           <select value={region} onChange={(e) => setRegion(e.target.value)} className="rounded-md border border-line px-2 py-1.5 text-sm">
             <option value="">All</option>
@@ -168,6 +180,7 @@ export default function ListPage() {
               <th className="px-3 py-2">Platforms</th>
               <th className="px-3 py-2">Caption</th>
               <th className="px-3 py-2">Status</th>
+              <th className="px-3 py-2">Category</th>
               <th className="px-3 py-2">Region</th>
               <th className="px-3 py-2">Owner</th>
               <th className="px-3 py-2">Tags</th>
@@ -176,10 +189,10 @@ export default function ListPage() {
           </thead>
           <tbody>
             {loading && (
-              <tr><td colSpan={8} className="px-3 py-6 text-center text-zinc-400">Loading…</td></tr>
+              <tr><td colSpan={9} className="px-3 py-6 text-center text-zinc-400">Loading…</td></tr>
             )}
             {!loading && filtered.length === 0 && (
-              <tr><td colSpan={8} className="px-3 py-6 text-center text-zinc-400">No entries match these filters.</td></tr>
+              <tr><td colSpan={9} className="px-3 py-6 text-center text-zinc-400">No entries match these filters.</td></tr>
             )}
             {filtered.map((p) => (
               <tr key={p.id} className="border-b border-line last:border-0 hover:bg-zinc-50">
@@ -187,6 +200,7 @@ export default function ListPage() {
                 <td className="px-3 py-2">{p.platforms.join(", ") || "—"}</td>
                 <td className="max-w-xs truncate px-3 py-2" title={p.caption}>{p.caption || <span className="text-zinc-400">(no caption)</span>}</td>
                 <td className="px-3 py-2"><StatusBadge status={p.status} /></td>
+                <td className="px-3 py-2">{p.category || "—"}</td>
                 <td className="px-3 py-2">{p.region || "—"}</td>
                 <td className="px-3 py-2">{p.owner}</td>
                 <td className="px-3 py-2">{p.tags.join(", ") || "—"}</td>

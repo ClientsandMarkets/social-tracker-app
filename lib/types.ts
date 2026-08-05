@@ -31,11 +31,30 @@ export const REGIONS = [
 ] as const;
 export type Region = (typeof REGIONS)[number];
 
+// Content category — a separate axis from tags, for quick tracking/reporting
+// ("how many People posts this quarter", "any Awards content pending").
+// "Other" is the deliberate catch-all: pick it and note specifics in tags if
+// a post doesn't fit the named buckets — extend this list rather than
+// overloading "Other" if a category keeps recurring.
+export const CATEGORIES = [
+  "People",
+  "Event",
+  "TL",
+  "Awards",
+  "Podcast",
+  "New Service/Asset",
+  "Existing Service/Asset",
+  "Partnership/Client",
+  "Other",
+] as const;
+export type Category = (typeof CATEGORIES)[number];
+
 export type Post = {
   id: number;
   platforms: Platform[];
   scheduled_date: string; // YYYY-MM-DD
   status: PostStatus;
+  category: Category | null;
   caption: string;
   creative_notes: string | null;
   collateral_url: string | null;
