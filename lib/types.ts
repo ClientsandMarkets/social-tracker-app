@@ -37,9 +37,9 @@ export type Region = (typeof REGIONS)[number];
 // a post doesn't fit the named buckets — extend this list rather than
 // overloading "Other" if a category keeps recurring.
 export const CATEGORIES = [
-  "People",
+  "People News",
   "Event",
-  "TL",
+  "Thought Leadership",
   "Awards",
   "Podcast",
   "New Service/Asset",
