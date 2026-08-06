@@ -36,6 +36,14 @@ function toISODate(d: Date) {
 export default function CalendarPage() {
   const { isEditor } = useCurrentUser();
   const [cursor, setCursor] = useState(() => new Date());
+  // Drives both the health strip's counts AND the grid below — previously
+  // the strip had its own internal toggle that only changed its four
+  // numbers while the grid kept showing the full month regardless, which
+  // read as the toggle simply not working. "This week" now means the
+  // actual current week (Sun–Sat containing today), not a browsable one —
+  // switching the grid to week mode always shows this week, independent of
+  // whatever month `cursor` is parked on.
+  const [viewMode, setViewMode] = useState<"week" | "month">("month");
   const [posts, setPosts] = useState<Post[]>([]);
   const [holidays, setHolidays] = useState<Holiday[]>([]);
   const [regulatory, setRegulatory] = useState<RegulatoryDate[]>([]);
@@ -66,6 +74,17 @@ export default function CalendarPage() {
   }, [load]);
 
   const days = useMemo(() => {
+    if (viewMode === "week") {
+      // Always the real current week, not a browsable one — matches the
+      // health strip's "this week" semantics exactly.
+      const today = new Date();
+      const weekStart = new Date(today.getFullYear(), today.getMonth(), today.getDate() - today.getDay());
+      return Array.from({ length: 7 }, (_, i) => {
+        const d = new Date(weekStart);
+        d.setDate(weekStart.getDate() + i);
+        return d;
+      });
+    }
     const year = cursor.getFullYear();
     const month = cursor.getMonth();
     const first = new Date(year, month, 1);
@@ -76,7 +95,7 @@ export default function CalendarPage() {
       d.setDate(gridStart.getDate() + i);
       return d;
     });
-  }, [cursor]);
+  }, [cursor, viewMode]);
 
   const displayHolidays = useMemo(() => groupHolidaysForCalendar(holidays), [holidays]);
 
@@ -102,32 +121,47 @@ export default function CalendarPage() {
 
   const currentMonth = cursor.getMonth();
   const todayStr = toISODate(new Date());
+  // In week mode `days` is always the real current week (see the useMemo
+  // above), so every cell is "in range" — nothing should be grayed out the
+  // way days from the previous/next month are in the month grid.
+  const weekRangeLabel =
+    viewMode === "week" && days.length === 7
+      ? `${days[0].toLocaleDateString("en-US", { month: "short", day: "numeric" })} – ${days[6].toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`
+      : null;
 
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))}
-            className="rounded-md border border-line p-1.5 hover:bg-zinc-50"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-          <h1 className="font-heading w-48 text-center text-lg font-semibold text-ink">
-            {monthLabel(cursor)}
-          </h1>
-          <button
-            onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))}
-            className="rounded-md border border-line p-1.5 hover:bg-zinc-50"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </button>
-          <button
-            onClick={() => setCursor(new Date())}
-            className="ml-1 rounded-md border border-line px-2.5 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-50"
-          >
-            Today
-          </button>
+          {viewMode === "month" ? (
+            <>
+              <button
+                onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))}
+                className="rounded-md border border-line p-1.5 hover:bg-zinc-50"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <h1 className="font-heading w-48 text-center text-lg font-semibold text-ink">
+                {monthLabel(cursor)}
+              </h1>
+              <button
+                onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))}
+                className="rounded-md border border-line p-1.5 hover:bg-zinc-50"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => setCursor(new Date())}
+                className="ml-1 rounded-md border border-line px-2.5 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-50"
+              >
+                Today
+              </button>
+            </>
+          ) : (
+            // Week mode always shows the real current week — there's
+            // nothing to page between, so no chevrons/Today button here.
+            <h1 className="font-heading text-lg font-semibold text-ink">This week · {weekRangeLabel}</h1>
+          )}
         </div>
         {isEditor && (
           <button
@@ -140,7 +174,7 @@ export default function CalendarPage() {
         )}
       </div>
 
-      <PipelineHealthStrip posts={posts} />
+      <PipelineHealthStrip posts={posts} viewMode={viewMode} onViewModeChange={setViewMode} />
       <SuggestionsPanel onAccepted={load} />
 
       <div className="overflow-hidden rounded-xl border border-line bg-white shadow-sm">
@@ -154,14 +188,17 @@ export default function CalendarPage() {
         <div className="grid grid-cols-7">
           {days.map((d) => {
             const dateStr = toISODate(d);
-            const inMonth = d.getMonth() === currentMonth;
+            // Week mode's 7 days are always the real current week — every
+            // one of them is "in range" there, unlike the month grid's
+            // leading/trailing days from adjacent months.
+            const inMonth = viewMode === "week" || d.getMonth() === currentMonth;
             const isToday = dateStr === todayStr;
             const { posts: dayPosts, holidays: dayHolidays, regulatory: dayReg, events: dayEvents } = entriesFor(dateStr);
             return (
               <div
                 key={dateStr}
                 onClick={() => openNew(dateStr)}
-                className={`group min-h-[104px] border-b border-r border-line p-1.5 text-left align-top ${
+                className={`group ${viewMode === "week" ? "min-h-[220px]" : "min-h-[104px]"} border-b border-r border-line p-1.5 text-left align-top ${
                   inMonth ? "bg-white" : "bg-zinc-50/60"
                 } ${isEditor ? "cursor-pointer hover:bg-brand/5" : ""}`}
               >

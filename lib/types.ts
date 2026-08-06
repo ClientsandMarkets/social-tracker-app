@@ -5,7 +5,7 @@
 export const EDITORS = ["Damini", "Jimmy", "Twinkle", "Prachi"] as const;
 export type Editor = (typeof EDITORS)[number];
 
-export const PLATFORMS = ["LinkedIn", "Instagram", "X"] as const;
+export const PLATFORMS = ["LinkedIn", "Instagram", "X", "YouTube"] as const;
 export type Platform = (typeof PLATFORMS)[number];
 
 export const STATUSES = [

@@ -1,0 +1,12 @@
+# Social Content Tracker
+
+> An internal planning and archive tool for a social content pipeline across LinkedIn, Instagram, X, and YouTube, including regional holidays, regulatory content triggers, and an idea backlog.
+
+This is an operational tool, not a documentation or publishing site. It has no login: anyone with the URL can view current pipeline status and archived post history. There is no separate published content here beyond the tool's own interface.
+
+## Pages
+
+- [Calendar](/): Month/week view of scheduled posts, holidays, regulatory dates, and events.
+- [List](/list): Filterable table of every pipeline entry.
+- [Idea backlog](/backlog): Unscheduled content ideas.
+- [Archive](/archive): Published post history with Excel export.

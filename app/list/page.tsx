@@ -14,6 +14,10 @@ export default function ListPage() {
   const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Post | null>(null);
+  // The List page has no day-grid to switch views on, so unlike the
+  // calendar page this toggle only ever needs to drive its own counts —
+  // local state is enough here.
+  const [healthViewMode, setHealthViewMode] = useState<"week" | "month">("month");
 
   const [platform, setPlatform] = useState("");
   const [status, setStatus] = useState("");
@@ -104,7 +108,7 @@ export default function ListPage() {
         )}
       </div>
 
-      <PipelineHealthStrip posts={posts} />
+      <PipelineHealthStrip posts={posts} viewMode={healthViewMode} onViewModeChange={setHealthViewMode} />
 
       <div className="mb-4 flex flex-wrap items-end gap-3 rounded-xl border border-line bg-white p-3 shadow-sm">
         <label className="flex flex-col gap-1 text-xs font-medium text-zinc-500">

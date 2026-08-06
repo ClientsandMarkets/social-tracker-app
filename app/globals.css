@@ -1,4 +1,3 @@
-@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -11,7 +10,9 @@ body {
   box-sizing: border-box;
 }
 .font-heading {
-  font-family: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  /* --font-heading is set by next/font in app/layout.tsx (self-hosted,
+     preloaded at build time) instead of a runtime Google Fonts @import. */
+  font-family: var(--font-heading), ui-sans-serif, system-ui, sans-serif;
 }
 @keyframes pop-in {
   0% {

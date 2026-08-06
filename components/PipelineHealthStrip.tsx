@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { Post } from "@/lib/types";
 
 // PRD §6.3 — a summary row at the top of the calendar: counts of Planned,
@@ -9,23 +9,22 @@ import type { Post } from "@/lib/types";
 //
 // "This week" / "this month" mean the actual calendar week (Sun–Sat) and
 // calendar month containing today — matching what the calendar grid below
-// shows. An earlier version computed a rolling forward-only window (today
-// through today+7/30 days) instead: that silently excluded anything
-// scheduled earlier in the week/month — including overdue posts still sat
-// in Planned — from every single count, so the strip could read "0
-// planned" while stale posts sat untouched for weeks. Local calendar-field
-// math (getFullYear/getMonth/getDate) is used throughout, not UTC, for the
-// same reason toISODate in app/page.tsx does — mixing local construction
-// with UTC serialization is what caused the earlier date off-by-one bugs.
+// shows. The week/month toggle is controlled by the parent (app/page.tsx)
+// rather than kept as local state here: the calendar grid itself needs to
+// switch to a genuine week view when "this week" is selected, not just
+// change these four numbers while the grid keeps showing the full month —
+// that mismatch was confusing enough that it read as a bug. Local
+// calendar-field math (getFullYear/getMonth/getDate) is used throughout,
+// not UTC, for the same reason toISODate in app/page.tsx does — mixing
+// local construction with UTC serialization is what caused the earlier
+// date off-by-one bugs.
 //
 // "At risk" is a slightly wider net than the exact single-day webhook
 // trigger in §8 (which fires only at exactly 2 days out): anything overdue
 // or due within 2 days, and still Planned/In progress, counts — and unlike
 // the Planned/In progress/Ready tiles, it's independent of the week/month
 // toggle, since an overdue post is at risk no matter which window you're
-// looking at. (Previously this was computed only from the rolling window
-// above, which required scheduled_date >= today — making "or already
-// overdue" in this same comment unreachable in practice.)
+// looking at.
 function localMidnight(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
@@ -35,15 +34,21 @@ function parseLocalDate(iso: string): Date {
   return new Date(y, m - 1, d);
 }
 
-export default function PipelineHealthStrip({ posts }: { posts: Post[] }) {
-  const [window_, setWindow] = useState<"week" | "month">("month");
-
+export default function PipelineHealthStrip({
+  posts,
+  viewMode,
+  onViewModeChange,
+}: {
+  posts: Post[];
+  viewMode: "week" | "month";
+  onViewModeChange: (v: "week" | "month") => void;
+}) {
   const counts = useMemo(() => {
     const today = localMidnight(new Date());
 
     let rangeStart: Date;
     let rangeEnd: Date;
-    if (window_ === "week") {
+    if (viewMode === "week") {
       rangeStart = new Date(today.getFullYear(), today.getMonth(), today.getDate() - today.getDay());
       rangeEnd = new Date(today.getFullYear(), today.getMonth(), rangeStart.getDate() + 6);
     } else {
@@ -71,7 +76,7 @@ export default function PipelineHealthStrip({ posts }: { posts: Post[] }) {
       ready: inRange.filter((p) => p.status === "Ready").length,
       atRisk: atRisk.length,
     };
-  }, [posts, window_]);
+  }, [posts, viewMode]);
 
   const tiles = [
     { label: "Planned", value: counts.planned, color: "text-zinc-600" },
@@ -92,9 +97,9 @@ export default function PipelineHealthStrip({ posts }: { posts: Post[] }) {
         {(["week", "month"] as const).map((w) => (
           <button
             key={w}
-            onClick={() => setWindow(w)}
+            onClick={() => onViewModeChange(w)}
             className={`rounded-md px-2.5 py-1 font-medium capitalize transition-colors ${
-              window_ === w ? "bg-white text-ink shadow-sm" : "text-zinc-500"
+              viewMode === w ? "bg-white text-ink shadow-sm" : "text-zinc-500"
             }`}
           >
             this {w}
