@@ -7,32 +7,62 @@ import type { Post } from "@/lib/types";
 // In progress, Ready, and At risk for the current week or month, so status
 // is visible without scrolling or counting manually.
 //
-// "At risk" here is a slightly wider net than the exact single-day webhook
-// trigger in §8 (which fires only at exactly 2 days out) — for a glanceable
-// health count, anything due within 2 days (or already overdue) and still
-// Planned/In progress counts, otherwise the strip would read "0 at risk"
-// almost all the time.
+// "This week" / "this month" mean the actual calendar week (Sun–Sat) and
+// calendar month containing today — matching what the calendar grid below
+// shows. An earlier version computed a rolling forward-only window (today
+// through today+7/30 days) instead: that silently excluded anything
+// scheduled earlier in the week/month — including overdue posts still sat
+// in Planned — from every single count, so the strip could read "0
+// planned" while stale posts sat untouched for weeks. Local calendar-field
+// math (getFullYear/getMonth/getDate) is used throughout, not UTC, for the
+// same reason toISODate in app/page.tsx does — mixing local construction
+// with UTC serialization is what caused the earlier date off-by-one bugs.
+//
+// "At risk" is a slightly wider net than the exact single-day webhook
+// trigger in §8 (which fires only at exactly 2 days out): anything overdue
+// or due within 2 days, and still Planned/In progress, counts — and unlike
+// the Planned/In progress/Ready tiles, it's independent of the week/month
+// toggle, since an overdue post is at risk no matter which window you're
+// looking at. (Previously this was computed only from the rolling window
+// above, which required scheduled_date >= today — making "or already
+// overdue" in this same comment unreachable in practice.)
+function localMidnight(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+function parseLocalDate(iso: string): Date {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+
 export default function PipelineHealthStrip({ posts }: { posts: Post[] }) {
   const [window_, setWindow] = useState<"week" | "month">("month");
 
   const counts = useMemo(() => {
-    const today = new Date();
-    today.setUTCHours(0, 0, 0, 0);
-    const rangeEnd = new Date(today);
-    if (window_ === "week") rangeEnd.setUTCDate(rangeEnd.getUTCDate() + 7);
-    else rangeEnd.setUTCMonth(rangeEnd.getUTCMonth() + 1);
+    const today = localMidnight(new Date());
+
+    let rangeStart: Date;
+    let rangeEnd: Date;
+    if (window_ === "week") {
+      rangeStart = new Date(today.getFullYear(), today.getMonth(), today.getDate() - today.getDay());
+      rangeEnd = new Date(today.getFullYear(), today.getMonth(), rangeStart.getDate() + 6);
+    } else {
+      rangeStart = new Date(today.getFullYear(), today.getMonth(), 1);
+      rangeEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    }
 
     const inRange = posts.filter((p) => {
       if (p.archived_at) return false;
-      const d = new Date(p.scheduled_date + "T00:00:00Z");
-      return d >= today && d <= rangeEnd;
+      const scheduled = parseLocalDate(p.scheduled_date);
+      return scheduled >= rangeStart && scheduled <= rangeEnd;
     });
 
-    const atRisk = inRange.filter((p) => {
+    const atRisk = posts.filter((p) => {
+      if (p.archived_at) return false;
       if (p.status !== "Planned" && p.status !== "In progress") return false;
-      const d = new Date(p.scheduled_date + "T00:00:00Z");
-      const daysOut = (d.getTime() - today.getTime()) / 86400000;
-      return daysOut <= 2;
+      const scheduled = parseLocalDate(p.scheduled_date);
+      const daysOut = (scheduled.getTime() - today.getTime()) / 86400000;
+      return daysOut <= 2; // overdue (negative) or due within 2 days
     });
 
     return {

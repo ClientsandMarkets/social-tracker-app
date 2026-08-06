@@ -12,6 +12,7 @@ type Suggestion = {
   detail: string;
   date: string | null;
   regions: string[];
+  defaultCaption?: string;
 };
 
 const KIND_LABEL: Record<Suggestion["kind"], string> = {
@@ -54,6 +55,7 @@ export default function SuggestionsPanel({ onAccepted }: { onAccepted?: () => vo
           title: s.title,
           date: s.date,
           regions: s.regions,
+          default_caption: s.defaultCaption,
           backlog_item_ids: action === "accept" ? Array.from(pickedIds) : [],
         }),
       });

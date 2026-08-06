@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Only editors can act on suggestions." }, { status: 403 });
   }
   const body = await req.json();
-  const { action, key, title, date, regions, backlog_item_ids } = body;
+  const { action, key, title, date, regions, default_caption, backlog_item_ids } = body;
 
   if (action === "dismiss") {
     await dismissSuggestion(key);
@@ -29,7 +29,14 @@ export async function POST(req: NextRequest) {
   if (action === "accept") {
     const backlog = backlog_item_ids?.length ? await listBacklog() : [];
     const picked = backlog.filter((b) => backlog_item_ids?.includes(b.id));
-    const captionSeed = picked.map((b) => b.title).join(" / ") || title || "";
+    // Backlog idea(s) the editor explicitly picked win if present; otherwise
+    // fall back to the suggestion's pre-written caption (e.g. "Wishing
+    // everyone a happy Diwali!") rather than the bare occasion title — the
+    // client always sends this for holiday suggestions, computed in
+    // lib/suggestions.ts. Only a title-only suggestion (no backlog pick, no
+    // default_caption — e.g. a regulatory or gap-fill trigger) falls all the
+    // way through to the plain title.
+    const captionSeed = picked.map((b) => b.title).join(" / ") || default_caption || title || "";
     const post = await createPost(
       {
         platforms: ["LinkedIn"],
