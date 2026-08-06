@@ -39,10 +39,11 @@ export default function CalendarPage() {
   // Drives both the health strip's counts AND the grid below — previously
   // the strip had its own internal toggle that only changed its four
   // numbers while the grid kept showing the full month regardless, which
-  // read as the toggle simply not working. "This week" now means the
-  // actual current week (Sun–Sat containing today), not a browsable one —
-  // switching the grid to week mode always shows this week, independent of
-  // whatever month `cursor` is parked on.
+  // read as the toggle simply not working. `cursor` is the shared anchor
+  // date for both modes: month mode grids the month containing it, week
+  // mode grids the Sun–Sat week containing it. Prev/Next/Today below move
+  // `cursor` by a month or by 7 days depending on the mode, so week view is
+  // just as browsable as month view — not frozen on "this week" forever.
   const [viewMode, setViewMode] = useState<"week" | "month">("month");
   const [posts, setPosts] = useState<Post[]>([]);
   const [holidays, setHolidays] = useState<Holiday[]>([]);
@@ -75,10 +76,9 @@ export default function CalendarPage() {
 
   const days = useMemo(() => {
     if (viewMode === "week") {
-      // Always the real current week, not a browsable one — matches the
-      // health strip's "this week" semantics exactly.
-      const today = new Date();
-      const weekStart = new Date(today.getFullYear(), today.getMonth(), today.getDate() - today.getDay());
+      // The Sun–Sat week containing `cursor` — defaults to the real
+      // current week (cursor starts as today), but pages with it.
+      const weekStart = new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate() - cursor.getDay());
       return Array.from({ length: 7 }, (_, i) => {
         const d = new Date(weekStart);
         d.setDate(weekStart.getDate() + i);
@@ -121,47 +121,60 @@ export default function CalendarPage() {
 
   const currentMonth = cursor.getMonth();
   const todayStr = toISODate(new Date());
-  // In week mode `days` is always the real current week (see the useMemo
-  // above), so every cell is "in range" — nothing should be grayed out the
-  // way days from the previous/next month are in the month grid.
+  // In week mode every one of the 7 displayed days belongs to "this page"
+  // by definition — nothing should be grayed out the way days from the
+  // previous/next month are in the month grid.
   const weekRangeLabel =
     viewMode === "week" && days.length === 7
       ? `${days[0].toLocaleDateString("en-US", { month: "short", day: "numeric" })} – ${days[6].toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`
       : null;
+  const isCurrentWeek = viewMode === "week" && days.some((d) => toISODate(d) === todayStr);
+
+  function goPrev() {
+    if (viewMode === "week") {
+      setCursor(new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate() - 7));
+    } else {
+      setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1));
+    }
+  }
+  function goNext() {
+    if (viewMode === "week") {
+      setCursor(new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate() + 7));
+    } else {
+      setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1));
+    }
+  }
 
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          {viewMode === "month" ? (
-            <>
-              <button
-                onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))}
-                className="rounded-md border border-line p-1.5 hover:bg-zinc-50"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <h1 className="font-heading w-48 text-center text-lg font-semibold text-ink">
-                {monthLabel(cursor)}
-              </h1>
-              <button
-                onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))}
-                className="rounded-md border border-line p-1.5 hover:bg-zinc-50"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => setCursor(new Date())}
-                className="ml-1 rounded-md border border-line px-2.5 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-50"
-              >
-                Today
-              </button>
-            </>
-          ) : (
-            // Week mode always shows the real current week — there's
-            // nothing to page between, so no chevrons/Today button here.
-            <h1 className="font-heading text-lg font-semibold text-ink">This week · {weekRangeLabel}</h1>
-          )}
+          <button onClick={goPrev} className="rounded-md border border-line p-1.5 hover:bg-zinc-50">
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <h1 className="font-heading w-56 text-center text-lg font-semibold text-ink">
+            {viewMode === "month" ? (
+              monthLabel(cursor)
+            ) : (
+              <>
+                {weekRangeLabel}
+                {isCurrentWeek && (
+                  <span className="ml-1.5 rounded-full bg-brand/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-brand">
+                    This week
+                  </span>
+                )}
+              </>
+            )}
+          </h1>
+          <button onClick={goNext} className="rounded-md border border-line p-1.5 hover:bg-zinc-50">
+            <ChevronRight className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => setCursor(new Date())}
+            className="ml-1 rounded-md border border-line px-2.5 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-50"
+          >
+            Today
+          </button>
         </div>
         {isEditor && (
           <button
@@ -188,9 +201,9 @@ export default function CalendarPage() {
         <div className="grid grid-cols-7">
           {days.map((d) => {
             const dateStr = toISODate(d);
-            // Week mode's 7 days are always the real current week — every
-            // one of them is "in range" there, unlike the month grid's
-            // leading/trailing days from adjacent months.
+            // Every one of week mode's 7 days is "in range" by definition,
+            // unlike the month grid's leading/trailing days from adjacent
+            // months.
             const inMonth = viewMode === "week" || d.getMonth() === currentMonth;
             const isToday = dateStr === todayStr;
             const { posts: dayPosts, holidays: dayHolidays, regulatory: dayReg, events: dayEvents } = entriesFor(dateStr);
