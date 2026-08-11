@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { AlertTriangle, Loader2, Paperclip, X } from "lucide-react";
 import { useCurrentUser } from "@/lib/current-user";
 import { checkCaptionStyle } from "@/lib/style-check";
+import PlatformIcon from "@/components/PlatformIcon";
 import { CATEGORIES, PLATFORMS, REGIONS, STATUSES, type Category, type Platform, type Post, type Region, type PostStatus, type BacklogItem } from "@/lib/types";
 
 export type PostFormState = {
@@ -192,6 +193,7 @@ export default function PostForm({
               {PLATFORMS.map((p) => (
                 <label key={p} className="flex items-center gap-1.5 text-sm">
                   <input type="checkbox" checked={form.platforms.includes(p)} onChange={() => togglePlatform(p)} />
+                  <PlatformIcon platform={p} />
                   {p}
                 </label>
               ))}

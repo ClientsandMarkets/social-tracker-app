@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, Plus, Gift, Scale, CalendarClock } from "luc
 import { useCurrentUser } from "@/lib/current-user";
 import PipelineHealthStrip from "@/components/PipelineHealthStrip";
 import SuggestionsPanel from "@/components/SuggestionsPanel";
+import PlatformIcon from "@/components/PlatformIcon";
 import PostForm from "@/components/PostForm";
 import { groupHolidaysForCalendar } from "@/lib/holiday-display";
 import type { Post, Holiday, RegulatoryDate, EventRow } from "@/lib/types";
@@ -272,7 +273,12 @@ export default function CalendarPage() {
                       className="flex items-center gap-1 truncate rounded border border-line bg-zinc-50 px-1 py-0.5 text-[10px] text-ink hover:bg-zinc-100"
                     >
                       <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${STATUS_DOT[p.status]}`} />
-                      {p.category ? `[${p.category}] ` : ""}{p.caption || "(no caption)"}
+                      {p.platforms.map((plat) => (
+                        <PlatformIcon key={plat} platform={plat} size={11} />
+                      ))}
+                      <span className="truncate">
+                        {p.category ? `[${p.category}] ` : ""}{p.caption || "(no caption)"}
+                      </span>
                     </div>
                   ))}
                 </div>

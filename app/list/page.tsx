@@ -6,6 +6,7 @@ import { useCurrentUser } from "@/lib/current-user";
 import PostForm from "@/components/PostForm";
 import StatusBadge from "@/components/StatusBadge";
 import PipelineHealthStrip from "@/components/PipelineHealthStrip";
+import PlatformIcon from "@/components/PlatformIcon";
 import { CATEGORIES, PLATFORMS, REGIONS, STATUSES, EDITORS, type Post } from "@/lib/types";
 
 export default function ListPage() {
@@ -201,7 +202,17 @@ export default function ListPage() {
             {filtered.map((p) => (
               <tr key={p.id} className="border-b border-line last:border-0 hover:bg-zinc-50">
                 <td className="whitespace-nowrap px-3 py-2">{p.scheduled_date}</td>
-                <td className="px-3 py-2">{p.platforms.join(", ") || "—"}</td>
+                <td className="px-3 py-2">
+                  {p.platforms.length ? (
+                    <div className="flex gap-1">
+                      {p.platforms.map((plat) => (
+                        <PlatformIcon key={plat} platform={plat} />
+                      ))}
+                    </div>
+                  ) : (
+                    "—"
+                  )}
+                </td>
                 <td className="max-w-xs truncate px-3 py-2" title={p.caption}>{p.caption || <span className="text-zinc-400">(no caption)</span>}</td>
                 <td className="px-3 py-2"><StatusBadge status={p.status} /></td>
                 <td className="px-3 py-2">{p.category || "—"}</td>
