@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { CalendarDays } from "lucide-react";
 
-// Custom 404 — replaces Next.js's bare unstyled default. Renders inside the
-// root layout (still gets TopNav, brand fonts/colors) like every other
-// route, so a broken/stale link doesn't dead-end on an unbranded blank page.
+// Custom 404 — replaces Next.js's bare unstyled default. The main app lives
+// at "/" via app/route.ts (a raw HTML response, not a page.tsx), so this is
+// the only route that still renders through app/layout.tsx — still on-brand
+// (fonts/colors) even though there's no shared nav to inherit from it.
 export default function NotFound() {
   return (
     <div className="flex flex-col items-center justify-center gap-3 py-24 text-center">
@@ -18,7 +19,7 @@ export default function NotFound() {
         href="/"
         className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark"
       >
-        Back to Calendar
+        Back to Team Workspace
       </Link>
     </div>
   );
