@@ -1647,15 +1647,35 @@ async function savePost(){
   }catch(e){ showToast(e.message, true); }
 }
 async function deletePost(){
+  // Deleting a post moves it to Archive rather than permanently removing it
+  // straight away -- same two-step pattern as Work Tracker (archiveTask
+  // moves to Archived; deleteArchivedTask there permanently removes it).
+  // Permanent removal for Marketing Tracker happens from the Archive tab's
+  // trash icon (deleteArchivedPost), not from here.
   const {id} = postModalTarget;
   if(!id) return;
   const p = posts.find(x=>x.id===id);
-  if(!confirm("Delete this post? This can't be undone.")) return;
+  if(!p) return;
+  if(p.archived_at){
+    if(!confirm("Permanently delete this archived post? This can't be undone.")) return;
+    try{
+      const res = await fetch('/api/posts/'+id, { method:'DELETE', headers:{'x-current-user':currentUser||''} });
+      if(!res.ok){ const j=await res.json().catch(()=>({})); throw new Error(j.error||'Delete failed.'); }
+      posts = posts.filter(x=>x.id!==id);
+      logActivity((currentUser||'Someone')+' deleted a post');
+      closePostModal();
+      buildCalendar(); renderList(); renderArchive();
+    }catch(e){ showToast(e.message, true); }
+    return;
+  }
+  if(!confirm("Delete this post? It will move to Archive.")) return;
   try{
-    const res = await fetch('/api/posts/'+id, { method:'DELETE', headers:{'x-current-user':currentUser||''} });
-    if(!res.ok){ const j=await res.json().catch(()=>({})); throw new Error(j.error||'Only archived posts can be permanently deleted.'); }
-    posts = posts.filter(x=>x.id!==id);
-    logActivity((currentUser||'Someone')+' deleted a post');
+    const res = await fetch('/api/posts/'+id, { method:'PATCH', headers:{'Content-Type':'application/json','x-current-user':currentUser||''}, body:JSON.stringify({status:'Archived'}) });
+    if(!res.ok){ const j=await res.json().catch(()=>({})); throw new Error(j.error||"Couldn't delete the post."); }
+    const updated = await res.json();
+    const idx = posts.findIndex(x=>x.id===id);
+    if(idx>-1) posts[idx]=updated;
+    logActivity((currentUser||'Someone')+' deleted "'+(updated.title||updated.caption||'a post')+'" — moved to Archive');
     closePostModal();
     buildCalendar(); renderList(); renderArchive();
   }catch(e){ showToast(e.message, true); }
