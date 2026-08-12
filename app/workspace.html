@@ -375,7 +375,6 @@
     <h2>Who&rsquo;s working today?</h2>
     <p>Pick your name &mdash; Marketing Tracker editing is limited to the four editors; everyone can use Work Tracker.</p>
     <div class="identity-grid" id="identity-grid"></div>
-    <div class="identity-hint">This is the same lightweight name-picker both trackers already use &mdash; no password, no login system.</div>
   </div>
 </div>
 
@@ -1003,7 +1002,7 @@ async function restoreTask(id){
 async function deleteArchivedTask(id){
   const t = tasks.find(x=>x.id===id);
   if(!t) return;
-  if(!confirm('Permanently delete "'+t.task+'"? This can\\'t be undone.')) return;
+  if(!confirm('Permanently delete "'+t.task+'"? This can\'t be undone.')) return;
   try{
     const res = await fetch('/api/worktracker/tasks/'+id, { method:'DELETE' });
     if(!res.ok) throw new Error('Delete failed.');
@@ -1095,7 +1094,7 @@ async function bulkReset(){
 }
 async function bulkDelete(){
   const ids = Array.from(selectedTasks);
-  if(!confirm('Permanently delete '+ids.length+' task(s)? This can\\'t be undone.')) return;
+  if(!confirm('Permanently delete '+ids.length+' task(s)? This can\'t be undone.')) return;
   for(const id of ids){
     const t = tasks.find(x=>x.id===id);
     try{
