@@ -8,6 +8,8 @@ import type {
   BacklogItem,
   Comment,
   RecurringRule,
+  WorkTask,
+  WorkTaskInput,
 } from "./types";
 
 // Works with any Postgres provider (Vercel's Neon-backed Postgres, Supabase,
@@ -125,6 +127,11 @@ export async function ensureSchema(): Promise<void> {
       -- harmless no-op once it's already there.
       ALTER TABLE posts ADD COLUMN IF NOT EXISTS category TEXT;
       ALTER TABLE posts ADD COLUMN IF NOT EXISTS format TEXT;
+      CREATE TABLE IF NOT EXISTS work_tasks (
+        id SERIAL PRIMARY KEY, task_date TEXT, task TEXT NOT NULL, category TEXT, poc TEXT,
+        due_date TEXT, assigned_to TEXT, priority TEXT NOT NULL DEFAULT 'Low', notes TEXT,
+        archived_at TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+      );
     `).then(() => undefined);
   }
   return schemaReady;
@@ -538,4 +545,86 @@ export async function listDismissed(): Promise<string[]> {
   await ensureSchema();
   const { rows } = await pool.query("SELECT key FROM dismissed_suggestions;");
   return rows.map((r) => r.key as string);
+}
+
+// ---------- Work Tracker tasks ----------
+// Stored locally now (previously proxied to the retired work-tracker-drab
+// app) — see app/api/worktracker/tasks/*.
+
+export async function listWorkTasks(archived: boolean): Promise<WorkTask[]> {
+  await ensureSchema();
+  const { rows } = await pool.query(
+    archived
+      ? "SELECT * FROM work_tasks WHERE archived_at IS NOT NULL ORDER BY due_date ASC, id ASC;"
+      : "SELECT * FROM work_tasks WHERE archived_at IS NULL ORDER BY due_date ASC, id ASC;"
+  );
+  return rows as WorkTask[];
+}
+
+export async function getWorkTask(id: number): Promise<WorkTask | null> {
+  await ensureSchema();
+  const { rows } = await pool.query("SELECT * FROM work_tasks WHERE id = $1;", [id]);
+  return (rows[0] as WorkTask) || null;
+}
+
+export async function createWorkTask(input: WorkTaskInput): Promise<WorkTask> {
+  await ensureSchema();
+  const now = new Date().toISOString();
+  const { rows } = await pool.query(
+    `INSERT INTO work_tasks (task_date, task, category, poc, due_date, assigned_to, priority, notes, created_at, updated_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *;`,
+    [
+      input.task_date ?? null,
+      input.task || "",
+      input.category ?? null,
+      input.poc ?? null,
+      input.due_date ?? null,
+      input.assigned_to ?? null,
+      input.priority || "Low",
+      input.notes ?? null,
+      now,
+      now,
+    ]
+  );
+  return rows[0] as WorkTask;
+}
+
+export async function updateWorkTask(
+  id: number,
+  patch: WorkTaskInput & { action?: string; status?: string }
+): Promise<WorkTask | null> {
+  await ensureSchema();
+  const existing = await getWorkTask(id);
+  if (!existing) return null;
+  const now = new Date().toISOString();
+  const merged: WorkTask = { ...existing, ...patch, updated_at: now };
+  if (patch.action === "restore") {
+    merged.archived_at = null;
+  } else if (patch.status === "Completed") {
+    merged.archived_at = existing.archived_at || now;
+  }
+  const { rows } = await pool.query(
+    `UPDATE work_tasks SET task_date=$1, task=$2, category=$3, poc=$4, due_date=$5, assigned_to=$6, priority=$7, notes=$8, archived_at=$9, updated_at=$10
+     WHERE id=$11 RETURNING *;`,
+    [
+      merged.task_date,
+      merged.task,
+      merged.category,
+      merged.poc,
+      merged.due_date,
+      merged.assigned_to,
+      merged.priority,
+      merged.notes,
+      merged.archived_at,
+      merged.updated_at,
+      id,
+    ]
+  );
+  return rows[0] as WorkTask;
+}
+
+export async function deleteWorkTask(id: number): Promise<boolean> {
+  await ensureSchema();
+  const { rowCount } = await pool.query("DELETE FROM work_tasks WHERE id = $1;", [id]);
+  return (rowCount ?? 0) > 0;
 }

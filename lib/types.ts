@@ -150,3 +150,23 @@ export type RecurringRule = {
   gap_fill_interval_days: number; // default 15, configurable per type
   last_post_date: string | null;
 };
+
+// Work Tracker task — now stored locally (previously proxied to a separate
+// work-tracker-drab.vercel.app app, which has since been retired). Field
+// names/shapes match exactly what workspace.html's Work Tracker UI already
+// sends and expects, so no frontend changes were needed.
+export type WorkTask = {
+  id: number;
+  task_date: string | null;
+  task: string;
+  category: string | null;
+  poc: string | null;
+  due_date: string | null;
+  assigned_to: string | null; // "/"-joined list of teammate names
+  priority: string; // "High" | "Medium" | "Low"
+  notes: string | null;
+  archived_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+export type WorkTaskInput = Partial<Omit<WorkTask, "id" | "created_at" | "updated_at" | "archived_at">>;
