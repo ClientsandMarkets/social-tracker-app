@@ -23,6 +23,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "file is required." }, { status: 400 });
   }
   const filename = (file as File).name || `upload-${Date.now()}`;
-  const blob = await put(filename, file, { access: "public", addRandomSuffix: true });
+  // Store is provisioned as private-access only (no public option on this
+  // Vercel plan) — "private" here matches the store config, not a policy
+  // choice. put() still returns a directly-fetchable signed URL.
+  const blob = await put(filename, file, { access: "private", addRandomSuffix: true });
   return NextResponse.json({ url: blob.url, name: filename }, { status: 201 });
 }
