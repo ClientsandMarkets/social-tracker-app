@@ -402,7 +402,6 @@
       <button class="collapse-btn" onclick="toggleSidebar()" title="Collapse">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>
       </button>
-      <div class="uniqable-brand"><span class="em">&#128161;</span> <span class="lbl">Uniqable</span></div>
     </div>
     <nav>
       <div class="nav-item active" data-wt="tasks" onclick="switchWT('tasks'); window.scrollTo({top:0, behavior:'smooth'});">
@@ -424,7 +423,7 @@
   <main class="main">
 
     <div class="wt-section active" id="wt-view-tasks">
-      <div class="topbar"><div class="title-block"><h1>Work Tracker</h1></div></div>
+      <div class="topbar"><div class="title-block"><h1>&#128161; Uniqable</h1></div></div>
 
       <div class="health-strip">
         <div class="health-card animate-in"><div class="num" style="color:var(--purple)" id="hs-total">&ndash;</div><div class="lbl">Open tasks</div></div>
@@ -596,11 +595,9 @@
       <div class="modal-field"><label>Owner (scheduled by) *</label><select id="p-owner"></select></div>
       <div class="modal-field"><label>Post-live link</label><input type="text" id="p-livelink" placeholder="Optional"></div>
     </div>
-    <div class="modal-field"><label>Creative / design notes</label><textarea id="p-creative-notes" placeholder="What should go on the accompanying image?"></textarea></div>
     <div class="modal-field"><label>Collateral link</label><input type="text" id="p-collateral" placeholder="https://&hellip; or leave blank"></div>
     <div class="modal-field"><label>Tags (comma separated)</label><input type="text" id="p-tags" placeholder="theme, campaign"></div>
-    <div class="modal-field" id="p-backlog-wrap" style="display:none;"><label>Idea backlog (optional)</label><div id="p-backlog-checks" style="max-height:110px;overflow-y:auto;background:var(--lavender);border-radius:8px;padding:8px 10px;"></div></div>
-    <div class="modal-field"><label>Notes / brief</label><textarea id="p-notes" placeholder="Optional context"></textarea></div>
+    <div class="modal-field"><label>Any Design/Other notes</label><textarea id="p-notes" placeholder="Optional context"></textarea></div>
     <div class="modal-field" id="p-scheduledby-wrap" style="display:none;">
       <label>Scheduled by</label>
       <div class="scheduled-by-note" id="p-scheduledby-note"></div>
@@ -634,12 +631,6 @@
       <button class="collapse-btn" onclick="toggleSocialSidebar()" title="Collapse">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>
       </button>
-      <div class="brand">
-        <div class="brand-mark">&#128203;</div>
-        <div>
-          <div class="brand-text" style="font-family:'Montserrat',sans-serif;font-weight:700;font-size:14.5px;color:#fff;">Marketing Tracker</div>
-        </div>
-      </div>
     </div>
     <nav>
       <div class="nav-item active" data-view="calendar">
@@ -667,9 +658,10 @@
   <main class="main">
     <section class="section-view active" id="view-calendar">
       <div id="social-banner-slot"></div>
+      <div class="title-block"><h1>&#128203; Marketing Tracker</h1></div>
       <div class="topbar cal-topbar">
         <button type="button" class="add-task-btn social-editable" id="add-post-btn" onclick="openPostModal(todayISO(), null)">+ Add post</button>
-        <div class="month-nav cal-month-nav" style="position:absolute;left:50%;transform:translateX(-50%);"><button onclick="calShift(-1)">&#8249;</button><span id="month-label">&ndash;</span><button onclick="calShift(1)">&#8250;</button><button class="chart-reset-btn" onclick="calToday()" style="margin-left:6px;">Today</button></div>
+        <div class="month-nav cal-month-nav" style="position:absolute;left:50%;transform:translateX(-50%);"><button onclick="calShift(-1)">&#8249;</button><span id="month-label">&ndash;</span><button onclick="calShift(1)">&#8250;</button></div>
         <div class="view-toggle"><button class="active">Calendar</button><button onclick="switchSocialView('list')">List</button></div>
       </div>
       <div class="health-strip">
@@ -1536,12 +1528,6 @@ function openPostModal(dateStr, id, prefill){
   document.querySelectorAll('#post-modal .modal-field').forEach(f=>f.classList.remove('has-error'));
   document.getElementById('p-style-warning').style.display='none';
 
-  const backlogWrap=document.getElementById('p-backlog-wrap');
-  if(backlogItems.length){
-    backlogWrap.style.display='';
-    document.getElementById('p-backlog-checks').innerHTML = backlogItems.map(b=>'<label style="display:flex;align-items:center;gap:6px;font-size:11.5px;padding:2px 0;"><input type="checkbox" value="'+b.id+'" '+(prefill&&prefill.backlogIds&&prefill.backlogIds.includes(b.id)?'checked':'')+'> '+escapeHtml(b.title)+'</label>').join('');
-  } else { backlogWrap.style.display='none'; }
-
   if(id){
     const p = posts.find(x=>x.id===id);
     document.getElementById('post-modal-title').textContent = '📅 Edit post';
@@ -1554,7 +1540,6 @@ function openPostModal(dateStr, id, prefill){
     document.getElementById('p-region').value = p.region||'';
     document.getElementById('p-owner').value = p.owner||'';
     document.getElementById('p-livelink').value = p.post_live_link||'';
-    document.getElementById('p-creative-notes').value = p.creative_notes||'';
     document.getElementById('p-collateral').value = p.collateral_url||'';
     document.getElementById('p-tags').value = (p.tags||[]).join(', ');
     document.getElementById('p-notes').value = p.notes||'';
@@ -1572,7 +1557,6 @@ function openPostModal(dateStr, id, prefill){
     document.getElementById('p-format').value='';
     document.getElementById('p-region').value='';
     document.getElementById('p-livelink').value='';
-    document.getElementById('p-creative-notes').value='';
     document.getElementById('p-collateral').value='';
     document.getElementById('p-tags').value='';
     document.getElementById('p-notes').value='';
@@ -1598,8 +1582,6 @@ function closePostModal(){ document.getElementById('post-modal').classList.remov
 
 function collectPostPayload(){
   const platforms = PLATFORMS.filter(pl=> document.getElementById('p-plat-'+pl).checked);
-  const backlogChecks = document.getElementById('p-backlog-wrap').style.display!=='none'
-    ? Array.from(document.querySelectorAll('#p-backlog-checks input:checked')).map(cb=>parseInt(cb.value,10)) : [];
   return {
     caption: document.getElementById('p-caption').value.trim(),
     scheduled_date: document.getElementById('p-date').value,
@@ -1610,11 +1592,9 @@ function collectPostPayload(){
     region: document.getElementById('p-region').value || null,
     owner: document.getElementById('p-owner').value,
     post_live_link: document.getElementById('p-livelink').value.trim() || null,
-    creative_notes: document.getElementById('p-creative-notes').value.trim() || null,
     collateral_url: document.getElementById('p-collateral').value.trim() || null,
     tags: document.getElementById('p-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
-    notes: document.getElementById('p-notes').value.trim() || null,
-    backlog_item_ids: backlogChecks
+    notes: document.getElementById('p-notes').value.trim() || null
   };
 }
 async function savePost(){
