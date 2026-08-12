@@ -24,8 +24,10 @@ export async function POST(req: NextRequest) {
   }
   const filename = (file as File).name || `upload-${Date.now()}`;
   // Store is provisioned as private-access only (no public option on this
-  // Vercel plan) — "private" here matches the store config, not a policy
-  // choice. put() still returns a directly-fetchable signed URL.
+  // Vercel plan). Private blobs have no browser-fetchable URL at all — every
+  // read needs BLOB_READ_WRITE_TOKEN — so we return our own proxy path
+  // (app/api/collateral/[...path]) instead of blob.url; that route holds the
+  // token and streams the file through on request.
   const blob = await put(filename, file, { access: "private", addRandomSuffix: true });
-  return NextResponse.json({ url: blob.url, name: filename }, { status: 201 });
+  return NextResponse.json({ url: `/api/collateral/${blob.pathname}`, name: filename }, { status: 201 });
 }
