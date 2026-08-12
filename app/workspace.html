@@ -754,6 +754,10 @@ const PRIORITY_META = {
 const MKT_CATEGORIES = ["People News","Event","Thought Leadership","Awards","Podcast","New Service/Asset","Existing Service/Asset","Partnership/Client","Other"];
 const FORMATS = ["Carousel","Static","Video"];
 const PLATFORMS = ["LinkedIn","Instagram","X","YouTube","Website"];
+// Default Collateral link for new posts -- team's shared SharePoint folder.
+// Pre-filled so editors don't have to paste it every time, but it's a plain
+// text input so anyone can edit or delete it per post.
+const DEFAULT_COLLATERAL_LINK = "https://uniqus-my.sharepoint.com/shared?id=%2Fpersonal%2Ftwinklerajan%5Funiqus%5Fcom%2FDocuments%2FTracker%20Items%5FSocial%20Media&listurl=%2Fpersonal%2Ftwinklerajan%5Funiqus%5Fcom%2FDocuments&viewid=0ba25f84%2D3ea6%2D4885%2Db20b%2Dead79fee6b38&sharingv2=true&fromShare=true&at=9&FolderCTID=0x01200041873246F941D7458FC564C8FC36442C";
 const REGIONS = ["India","USA","UAE","KSA","Qatar","Middle East","Global"];
 const STATUSES = ["Planned","In progress","For approval","Ready","Posted"];
 
@@ -1562,7 +1566,7 @@ function openPostModal(dateStr, id, prefill){
     document.getElementById('p-format').value='';
     document.getElementById('p-region').value='';
     document.getElementById('p-livelink').value='';
-    document.getElementById('p-collateral').value='';
+    document.getElementById('p-collateral').value = DEFAULT_COLLATERAL_LINK;
     document.getElementById('p-tags').value='';
     document.getElementById('p-notes').value='';
     document.getElementById('p-scheduledby-wrap').style.display='none';
