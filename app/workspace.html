@@ -31,6 +31,7 @@
     --progress:#C77700;
     --ready:#2B5FD9;
     --posted:#1B8F5A;
+    --approval:#0E7C86;
     --risk:#C4392B;
     --archived:#A9A4BC;
     --radius:10px;
@@ -161,7 +162,7 @@
   .panel{width:380px;max-width:92vw;height:100%;background:#fff;box-shadow:-8px 0 30px rgba(0,0,0,0.12);padding:26px 26px 30px;overflow-y:auto;animation:fadeSlideUp .25s ease both;}
   .panel-close{float:right;border:none;background:var(--lavender);width:26px;height:26px;border-radius:50%;cursor:pointer;color:var(--ink-soft);font-size:14px;}
   .status-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;margin-bottom:14px;}
-  .status-pill.progress{background:#FCF0DC;color:var(--progress);} .status-pill.ready{background:#E2EBFC;color:var(--ready);} .status-pill.planned{background:var(--lavender);color:var(--planned);} .status-pill.risk{background:#FBE3DF;color:var(--risk);}
+  .status-pill.progress{background:#FCF0DC;color:var(--progress);} .status-pill.ready{background:#E2EBFC;color:var(--ready);} .status-pill.planned{background:var(--lavender);color:var(--planned);} .status-pill.approval{background:#DCF3F1;color:var(--approval);} .status-pill.risk{background:#FBE3DF;color:var(--risk);}
   .panel h2{font-family:'Montserrat',sans-serif;font-size:17px;margin:0 0 4px;color:var(--ink);clear:both;padding-top:2px;}
   .panel .meta{font-size:11.5px;color:var(--ink-soft);margin-bottom:16px;}
   .panel-section{margin-bottom:18px;}
@@ -186,7 +187,7 @@
   td{padding:9px 12px;font-size:12.5px;border-top:1px solid var(--line);}
   tr:hover td{background:#FBFAFC;}
   .status-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;}
-  .status-badge.progress{background:#FCF0DC;color:var(--progress);} .status-badge.ready{background:#E2EBFC;color:var(--ready);} .status-badge.planned{background:var(--lavender);color:var(--planned);} .status-badge.posted{background:#DDF1E6;color:var(--posted);} .status-badge.risk{background:#FBE3DF;color:var(--risk);}
+  .status-badge.progress{background:#FCF0DC;color:var(--progress);} .status-badge.ready{background:#E2EBFC;color:var(--ready);} .status-badge.planned{background:var(--lavender);color:var(--planned);} .status-badge.posted{background:#DDF1E6;color:var(--posted);} .status-badge.approval{background:#DCF3F1;color:var(--approval);} .status-badge.risk{background:#FBE3DF;color:var(--risk);}
 
   .idea-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;}
   .idea-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;transition:transform .15s;}
@@ -258,9 +259,9 @@
   .field-error{display:none;color:var(--risk);font-size:11px;font-weight:600;margin-top:5px;}
   .modal-field.has-error input, .modal-field.has-error select, .modal-field.has-error textarea{border-color:var(--risk);background:#FDF1EF;}
   .modal-field.has-error .field-error{display:block;}
-  .platform-checks{display:flex;gap:12px;flex-wrap:wrap;padding:4px 0;}
-  .platform-checks label{display:flex;align-items:center;gap:5px;font-size:12.5px;cursor:pointer;}
-  .platform-checks input{accent-color:var(--purple);}
+  .platform-checks{display:flex;gap:18px;flex-wrap:wrap;padding:4px 0;}
+  .platform-checks label{display:flex;align-items:center;gap:9px;font-size:12.5px;cursor:pointer;}
+  .platform-checks input{accent-color:var(--purple);width:16px;height:16px;min-width:16px;margin:0;flex-shrink:0;}
   .add-link-btn{border:none;background:none;color:var(--purple);font-size:11.5px;font-weight:600;cursor:pointer;padding:2px 0;text-decoration:underline;}
   .scheduled-by-note{font-size:11.5px;color:var(--ink-soft);background:var(--lavender);border-radius:8px;padding:8px 11px;}
   .owner-initials-select{width:52px;text-align:center;padding:5px 4px;border-radius:20px;font-weight:700;}
@@ -569,13 +570,15 @@
 <div class="modal-overlay" id="post-modal">
   <div class="modal-card" style="width:560px;">
     <h2 id="post-modal-title">&#128197; Add post</h2>
-    <div class="modal-field"><label>Caption *</label><textarea id="p-caption" placeholder="Post copy&hellip;" rows="4"></textarea><div class="field-error" id="p-caption-error">Caption is required.</div><div class="style-warning" id="p-style-warning" style="display:none;"></div></div>
+    <div class="modal-field"><label>Title *</label><input type="text" id="p-title" placeholder="Short title for this post"><div class="field-error" id="p-title-error">Title is required.</div></div>
+    <div class="modal-field"><label>Caption *</label><textarea id="p-caption" placeholder="Post copy&hellip;" rows="4" oninput="autoPickTagsFromCaption()"></textarea><div class="field-error" id="p-caption-error">Caption is required.</div><div class="style-warning" id="p-style-warning" style="display:none;"></div></div>
     <div class="modal-row">
       <div class="modal-field"><label>Scheduled date *</label><input type="date" id="p-date"><div class="field-error" id="p-date-error">Date is required.</div></div>
       <div class="modal-field"><label>Status</label>
         <select id="p-status">
           <option value="Planned">Planned</option>
           <option value="In progress">In progress</option>
+          <option value="For approval">For approval</option>
           <option value="Ready">Ready</option>
           <option value="Posted">Posted</option>
         </select>
@@ -693,7 +696,7 @@
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Date</th><th>Caption</th><th>Category</th><th>Format</th><th>Owner</th><th>Status</th><th></th></tr></thead>
+          <thead><tr><th>Date</th><th>Title</th><th>Category</th><th>Format</th><th>Owner</th><th>Status</th><th></th></tr></thead>
           <tbody id="list-body"></tbody>
         </table>
       </div>
@@ -752,7 +755,7 @@ const MKT_CATEGORIES = ["People News","Event","Thought Leadership","Awards","Pod
 const FORMATS = ["Carousel","Static","Video"];
 const PLATFORMS = ["LinkedIn","Instagram","X","YouTube","Website"];
 const REGIONS = ["India","USA","UAE","KSA","Qatar","Middle East","Global"];
-const STATUSES = ["Planned","In progress","Ready","Posted"];
+const STATUSES = ["Planned","In progress","For approval","Ready","Posted"];
 
 function colorFor(name){ return PEOPLE_COLOR[(name||'').split('/')[0]] || "#8B87A3"; }
 function initials(name){ const parts=(name||'').split(/[\s/]+/).filter(Boolean); if(parts.length>=2) return (parts[0][0]+parts[1][0]).toUpperCase(); return (name||'?').slice(0,2).toUpperCase(); }
@@ -1256,7 +1259,7 @@ function isAtRisk(p){
   const daysOut=(scheduled.getTime()-localMidnight(new Date()).getTime())/86400000;
   return daysOut<=2;
 }
-function statusSlug(s){ return {Planned:'planned','In progress':'progress',Ready:'ready',Posted:'posted'}[s]||'planned'; }
+function statusSlug(s){ return {Planned:'planned','In progress':'progress','For approval':'approval',Ready:'ready',Posted:'posted'}[s]||'planned'; }
 function statusClass(p){ return isAtRisk(p) ? 'status-risk' : 'status-'+statusSlug(p.status); }
 function platIcon(p){
   const map={
@@ -1342,7 +1345,7 @@ function buildCalendar(){
     de.forEach(ev=> html += '<div class="event-tag">&#9679; '+escapeHtml(ev.name)+'</div>');
     dp.forEach(p=>{
       html += '<div class="chip '+statusClass(p)+'" onclick="event.stopPropagation(); openPostModal(\''+dateStr+'\', '+p.id+')">'
-        + '<div class="chip-title">'+escapeHtml((p.category||p.format?'['+[p.category,p.format].filter(Boolean).join(' · ')+'] ':'')+(p.caption||'(no caption)'))+'</div>'
+        + '<div class="chip-title">'+escapeHtml((p.category||p.format?'['+[p.category,p.format].filter(Boolean).join(' · ')+'] ':'')+(p.title||p.caption||'(no title)'))+'</div>'
         + '<div class="chip-meta"><span class="chip-plats">'+(p.platforms||[]).map(platIcon).join('')+'</span><span class="chip-status">'+(isAtRisk(p)?'At risk':p.status)+'</span></div></div>';
     });
     html += '</div>';
@@ -1375,7 +1378,7 @@ function renderList(){
   body.innerHTML = list.length ? list.map(p=>
     '<tr style="cursor:pointer;" onclick="openPostModal(\''+p.scheduled_date+'\', '+p.id+')">'
     + '<td>'+p.scheduled_date+'</td>'
-    + '<td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escapeHtml(p.caption||'(no caption)')+'</td>'
+    + '<td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escapeHtml(p.title||p.caption||'(no title)')+'</td>'
     + '<td>'+(p.category||'—')+'</td><td>'+(p.format||'—')+'</td><td>'+(p.owner||'—')+'</td>'
     + '<td><span class="status-badge '+statusSlug(p.status)+'">'+(isAtRisk(p)?'At risk':p.status)+'</span></td><td></td></tr>'
   ).join('') : '<tr><td colspan="7" style="text-align:center;color:var(--ink-soft);padding:22px;">No entries match these filters.</td></tr>';
@@ -1531,6 +1534,7 @@ function openPostModal(dateStr, id, prefill){
   if(id){
     const p = posts.find(x=>x.id===id);
     document.getElementById('post-modal-title').textContent = '📅 Edit post';
+    document.getElementById('p-title').value = p.title||'';
     document.getElementById('p-caption').value = p.caption||'';
     document.getElementById('p-date').value = p.scheduled_date;
     document.getElementById('p-status').value = p.status;
@@ -1549,6 +1553,7 @@ function openPostModal(dateStr, id, prefill){
     document.getElementById('p-duplicate-btn').style.display = '';
   } else {
     document.getElementById('post-modal-title').textContent = '📅 Add post';
+    document.getElementById('p-title').value = prefill&&prefill.title || '';
     document.getElementById('p-caption').value = prefill&&prefill.caption || '';
     document.getElementById('p-date').value = dateStr || todayISO();
     document.getElementById('p-status').value = 'Planned';
@@ -1580,9 +1585,22 @@ function openPostModal(dateStr, id, prefill){
 }
 function closePostModal(){ document.getElementById('post-modal').classList.remove('show'); }
 
+// Pulls any #hashtags typed in the caption straight into the Tags field, so
+// editors don't have to retype tags they already wrote in the copy. Merges
+// with (doesn't overwrite) whatever's already in Tags, de-duped.
+function autoPickTagsFromCaption(){
+  const caption = document.getElementById('p-caption').value;
+  const found = (caption.match(/#[A-Za-z0-9_]+/g) || []).map(t=>t.slice(1));
+  if(!found.length) return;
+  const tagsField = document.getElementById('p-tags');
+  const existing = tagsField.value.split(',').map(t=>t.trim()).filter(Boolean);
+  const merged = Array.from(new Set([...existing, ...found]));
+  tagsField.value = merged.join(', ');
+}
 function collectPostPayload(){
   const platforms = PLATFORMS.filter(pl=> document.getElementById('p-plat-'+pl).checked);
   return {
+    title: document.getElementById('p-title').value.trim(),
     caption: document.getElementById('p-caption').value.trim(),
     scheduled_date: document.getElementById('p-date').value,
     status: document.getElementById('p-status').value,
@@ -1598,10 +1616,12 @@ function collectPostPayload(){
   };
 }
 async function savePost(){
+  const titleField=document.getElementById('p-title');
   const captionField=document.getElementById('p-caption');
   const dateField=document.getElementById('p-date');
   const ownerField=document.getElementById('p-owner');
   let valid=true;
+  if(!titleField.value.trim()){ titleField.closest('.modal-field').classList.add('has-error'); valid=false; } else titleField.closest('.modal-field').classList.remove('has-error');
   if(!captionField.value.trim()){ captionField.closest('.modal-field').classList.add('has-error'); valid=false; } else captionField.closest('.modal-field').classList.remove('has-error');
   if(!dateField.value){ dateField.closest('.modal-field').classList.add('has-error'); valid=false; } else dateField.closest('.modal-field').classList.remove('has-error');
   if(!ownerField.value){ ownerField.closest('.modal-field').classList.add('has-error'); valid=false; } else ownerField.closest('.modal-field').classList.remove('has-error');

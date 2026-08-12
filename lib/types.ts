@@ -11,6 +11,7 @@ export type Platform = (typeof PLATFORMS)[number];
 export const STATUSES = [
   "Planned",
   "In progress",
+  "For approval",
   "Ready",
   "Posted",
   "Archived",
@@ -59,6 +60,7 @@ export type Post = {
   status: PostStatus;
   category: Category | null;
   format: Format | null;
+  title: string;
   caption: string;
   creative_notes: string | null;
   collateral_url: string | null;

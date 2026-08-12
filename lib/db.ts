@@ -127,6 +127,7 @@ export async function ensureSchema(): Promise<void> {
       -- harmless no-op once it's already there.
       ALTER TABLE posts ADD COLUMN IF NOT EXISTS category TEXT;
       ALTER TABLE posts ADD COLUMN IF NOT EXISTS format TEXT;
+      ALTER TABLE posts ADD COLUMN IF NOT EXISTS title TEXT NOT NULL DEFAULT '';
       CREATE TABLE IF NOT EXISTS work_tasks (
         id SERIAL PRIMARY KEY, task_date TEXT, task TEXT NOT NULL, category TEXT, poc TEXT,
         due_date TEXT, assigned_to TEXT, priority TEXT NOT NULL DEFAULT 'Low', notes TEXT,
@@ -160,10 +161,10 @@ export async function createPost(input: PostInput, styleWarnings: string[]): Pro
   const now = new Date().toISOString();
   const { rows } = await pool.query(
     `INSERT INTO posts (
-      platforms, scheduled_date, status, category, format, caption, creative_notes, collateral_url,
+      platforms, scheduled_date, status, category, format, title, caption, creative_notes, collateral_url,
       collateral_name, owner, posted_by, tags, region, linked_event_id,
       backlog_item_ids, post_live_link, notes, style_warnings, created_at, updated_at, archived_at
-    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)
     RETURNING *;`,
     [
       JSON.stringify(input.platforms || []),
@@ -171,6 +172,7 @@ export async function createPost(input: PostInput, styleWarnings: string[]): Pro
       input.status || "Planned",
       input.category ?? null,
       input.format ?? null,
+      input.title || "",
       input.caption || "",
       input.creative_notes ?? null,
       input.collateral_url ?? null,
@@ -219,17 +221,18 @@ export async function updatePost(
       : null;
   const { rows } = await pool.query(
     `UPDATE posts SET
-      platforms=$1, scheduled_date=$2, status=$3, category=$4, format=$5, caption=$6, creative_notes=$7,
-      collateral_url=$8, collateral_name=$9, owner=$10, posted_by=$11, tags=$12,
-      region=$13, linked_event_id=$14, backlog_item_ids=$15, post_live_link=$16,
-      notes=$17, style_warnings=$18, updated_at=$19, archived_at=$20
-    WHERE id=$21 RETURNING *;`,
+      platforms=$1, scheduled_date=$2, status=$3, category=$4, format=$5, title=$6, caption=$7, creative_notes=$8,
+      collateral_url=$9, collateral_name=$10, owner=$11, posted_by=$12, tags=$13,
+      region=$14, linked_event_id=$15, backlog_item_ids=$16, post_live_link=$17,
+      notes=$18, style_warnings=$19, updated_at=$20, archived_at=$21
+    WHERE id=$22 RETURNING *;`,
     [
       JSON.stringify(merged.platforms || []),
       merged.scheduled_date,
       merged.status,
       merged.category ?? null,
       merged.format ?? null,
+      merged.title,
       merged.caption,
       merged.creative_notes,
       merged.collateral_url,
@@ -271,6 +274,7 @@ export async function clonePost(id: number, owner: string): Promise<Post | null>
       status: "Planned",
       category: src.category,
       format: src.format,
+      title: src.title,
       caption: src.caption,
       creative_notes: src.creative_notes,
       collateral_url: src.collateral_url,
