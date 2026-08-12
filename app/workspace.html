@@ -1440,8 +1440,19 @@ function renderArchive(){
     '<tr><td>'+p.scheduled_date+'</td><td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escapeHtml(p.caption||'—')+'</td>'
     + '<td>'+(p.category||'—')+'</td><td>'+p.owner+'</td><td>'+(p.posted_by||'—')+'</td>'
     + '<td>'+(p.post_live_link ? '<a href="'+escapeAttr(p.post_live_link)+'" target="_blank" style="color:var(--purple);font-weight:600;">View</a>' : '—')+'</td>'
-    + '<td>'+(isMktEditor() ? '<button class="icon-btn danger" onclick="deleteArchivedPost('+p.id+')" title="Permanently delete">&#128465;</button>' : '')+'</td></tr>'
+    + '<td class="archived-actions">'+(isMktEditor() ? '<button class="icon-btn" onclick="restoreArchivedPost('+p.id+')" title="Restore to active">&#8630; Restore</button><button class="icon-btn danger" onclick="deleteArchivedPost('+p.id+')" title="Permanently delete">&#128465;</button>' : '')+'</td></tr>'
   ).join('') : '<tr><td colspan="7" style="text-align:center;color:var(--ink-soft);padding:18px;">Nothing archived yet.</td></tr>';
+}
+async function restoreArchivedPost(id){
+  try{
+    const res = await fetch('/api/posts/'+id, { method:'PATCH', headers:{'Content-Type':'application/json','x-current-user':currentUser||''}, body:JSON.stringify({status:'Planned'}) });
+    if(!res.ok){ const j=await res.json().catch(()=>({})); throw new Error(j.error||'Restore failed.'); }
+    const updated = await res.json();
+    const idx = posts.findIndex(x=>x.id===id);
+    if(idx>-1) posts[idx]=updated;
+    logActivity((currentUser||'Someone')+' restored "'+(updated.title||updated.caption||'a post')+'" from Archive');
+    buildCalendar(); renderList(); renderArchive();
+  }catch(e){ showToast(e.message, true); }
 }
 async function deleteArchivedPost(id){
   if(!confirm("Permanently delete this archived post? This can't be undone.")) return;
@@ -1610,7 +1621,7 @@ function extractKeywordTags(caption, max){
     const lower = w.toLowerCase();
     if(w.length<=2 || AUTO_TAG_STOPWORDS.has(lower) || seenLower.has(lower)) continue;
     seenLower.add(lower);
-    tags.push(w[0].toUpperCase()+w.slice(1));
+    tags.push('#'+w[0].toUpperCase()+w.slice(1));
     if(tags.length>=max) break;
   }
   return tags;
@@ -1696,7 +1707,6 @@ async function deletePost(){
     }catch(e){ showToast(e.message, true); }
     return;
   }
-  if(!confirm("Delete this post? It will move to Archive.")) return;
   try{
     const res = await fetch('/api/posts/'+id, { method:'PATCH', headers:{'Content-Type':'application/json','x-current-user':currentUser||''}, body:JSON.stringify({status:'Archived'}) });
     if(!res.ok){ const j=await res.json().catch(()=>({})); throw new Error(j.error||"Couldn't delete the post."); }
