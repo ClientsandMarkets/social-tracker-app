@@ -571,7 +571,7 @@
   <div class="modal-card" style="width:560px;">
     <h2 id="post-modal-title">&#128197; Add post</h2>
     <div class="modal-field"><label>Title *</label><input type="text" id="p-title" placeholder="Short title for this post"><div class="field-error" id="p-title-error">Title is required.</div></div>
-    <div class="modal-field"><label>Caption *</label><textarea id="p-caption" placeholder="Post copy&hellip;" rows="4" oninput="autoPickTagsFromCaption()"></textarea><div class="field-error" id="p-caption-error">Caption is required.</div><div class="style-warning" id="p-style-warning" style="display:none;"></div></div>
+    <div class="modal-field"><label>Caption *</label><textarea id="p-caption" placeholder="Post copy&hellip;" rows="4"></textarea><div class="field-error" id="p-caption-error">Caption is required.</div><div class="style-warning" id="p-style-warning" style="display:none;"></div></div>
     <div class="modal-row">
       <div class="modal-field"><label>Scheduled date *</label><input type="date" id="p-date"><div class="field-error" id="p-date-error">Date is required.</div></div>
       <div class="modal-field"><label>Status</label>
@@ -1586,6 +1586,7 @@ function openPostModal(dateStr, id, prefill){
     const w=document.getElementById('p-style-warning');
     if(warnings.length){ w.style.display=''; w.textContent = '⚠️ '+warnings.join(' ')+' (soft warning — you can still save.)'; }
     else w.style.display='none';
+    autoPickTagsFromCaption();
   };
 }
 function closePostModal(){ document.getElementById('post-modal').classList.remove('show'); }
