@@ -599,7 +599,7 @@
       <div class="modal-field"><label>Post-live link</label><input type="text" id="p-livelink" placeholder="Optional"></div>
     </div>
     <div class="modal-field"><label>Collateral link</label><input type="text" id="p-collateral" placeholder="https://&hellip; or leave blank"></div>
-    <div class="modal-field"><label>Tags (comma separated)</label><input type="text" id="p-tags" placeholder="theme, campaign"></div>
+    <div class="modal-field"><label>Tags</label><input type="text" id="p-tags" placeholder="#theme #campaign"></div>
     <div class="modal-field"><label>Any Design/Other notes</label><textarea id="p-notes" placeholder="Optional context"></textarea></div>
     <div class="modal-field" id="p-scheduledby-wrap" style="display:none;">
       <label>Scheduled by</label>
@@ -1561,7 +1561,7 @@ function openPostModal(dateStr, id, prefill){
     document.getElementById('p-owner').value = p.owner||'';
     document.getElementById('p-livelink').value = p.post_live_link||'';
     document.getElementById('p-collateral').value = p.collateral_url||'';
-    document.getElementById('p-tags').value = (p.tags||[]).join(', ');
+    document.getElementById('p-tags').value = (p.tags||[]).join(' ');
     document.getElementById('p-notes').value = p.notes||'';
     document.getElementById('p-scheduledby-wrap').style.display = '';
     document.getElementById('p-scheduledby-note').textContent = p.owner + (p.updated_at ? ' · last edited '+new Date(p.updated_at).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '');
@@ -1630,10 +1630,10 @@ function autoPickTagsFromCaption(){
   const caption = document.getElementById('p-caption').value;
   const extracted = extractKeywordTags(caption, 6);
   const tagsField = document.getElementById('p-tags');
-  const current = tagsField.value.split(',').map(t=>t.trim()).filter(Boolean);
+  const current = tagsField.value.split(/\s+/).map(t=>t.trim()).filter(Boolean);
   const manualOnly = current.filter(t=>!autoTagSet.has(t));
   const merged = Array.from(new Set([...manualOnly, ...extracted]));
-  tagsField.value = merged.join(', ');
+  tagsField.value = merged.join(' ');
   autoTagSet = new Set(extracted);
 }
 function collectPostPayload(){
@@ -1650,7 +1650,7 @@ function collectPostPayload(){
     owner: document.getElementById('p-owner').value,
     post_live_link: document.getElementById('p-livelink').value.trim() || null,
     collateral_url: document.getElementById('p-collateral').value.trim() || null,
-    tags: document.getElementById('p-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
+    tags: document.getElementById('p-tags').value.split(/\s+/).map(t=>t.trim()).filter(Boolean),
     notes: document.getElementById('p-notes').value.trim() || null
   };
 }
