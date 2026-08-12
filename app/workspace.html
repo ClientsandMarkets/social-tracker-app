@@ -701,7 +701,7 @@
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Date</th><th>Caption</th><th>Category</th><th>Owner</th><th>Status</th><th></th></tr></thead>
+          <thead><tr><th>Date</th><th>Caption</th><th>Category</th><th>Format</th><th>Owner</th><th>Status</th><th></th></tr></thead>
           <tbody id="list-body"></tbody>
         </table>
       </div>
@@ -1350,7 +1350,7 @@ function buildCalendar(){
     de.forEach(ev=> html += '<div class="event-tag">&#9679; '+escapeHtml(ev.name)+'</div>');
     dp.forEach(p=>{
       html += '<div class="chip '+statusClass(p)+'" onclick="event.stopPropagation(); openPostModal(\''+dateStr+'\', '+p.id+')">'
-        + '<div class="chip-title">'+escapeHtml((p.category?'['+p.category+'] ':'')+(p.caption||'(no caption)'))+'</div>'
+        + '<div class="chip-title">'+escapeHtml((p.category||p.format?'['+[p.category,p.format].filter(Boolean).join(' · ')+'] ':'')+(p.caption||'(no caption)'))+'</div>'
         + '<div class="chip-meta"><span class="chip-plats">'+(p.platforms||[]).map(platIcon).join('')+'</span><span class="chip-status">'+(isAtRisk(p)?'At risk':p.status)+'</span></div></div>';
     });
     html += '</div>';
@@ -1384,9 +1384,9 @@ function renderList(){
     '<tr style="cursor:pointer;" onclick="openPostModal(\''+p.scheduled_date+'\', '+p.id+')">'
     + '<td>'+p.scheduled_date+'</td>'
     + '<td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escapeHtml(p.caption||'(no caption)')+'</td>'
-    + '<td>'+(p.category||'—')+'</td><td>'+(p.owner||'—')+'</td>'
+    + '<td>'+(p.category||'—')+'</td><td>'+(p.format||'—')+'</td><td>'+(p.owner||'—')+'</td>'
     + '<td><span class="status-badge '+statusSlug(p.status)+'">'+(isAtRisk(p)?'At risk':p.status)+'</span></td><td></td></tr>'
-  ).join('') : '<tr><td colspan="6" style="text-align:center;color:var(--ink-soft);padding:22px;">No entries match these filters.</td></tr>';
+  ).join('') : '<tr><td colspan="7" style="text-align:center;color:var(--ink-soft);padding:22px;">No entries match these filters.</td></tr>';
 }
 
 /* ---- idea backlog ---- */
