@@ -49,12 +49,16 @@ export const CATEGORIES = [
 ] as const;
 export type Category = (typeof CATEGORIES)[number];
 
+export const FORMATS = ["Carousel", "Static", "Video"] as const;
+export type Format = (typeof FORMATS)[number];
+
 export type Post = {
   id: number;
   platforms: Platform[];
   scheduled_date: string; // YYYY-MM-DD
   status: PostStatus;
   category: Category | null;
+  format: Format | null;
   caption: string;
   creative_notes: string | null;
   collateral_url: string | null;

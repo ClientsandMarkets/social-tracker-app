@@ -373,7 +373,6 @@
   <div class="identity-card">
     <div class="id-mark">&#128193;</div>
     <h2>Who&rsquo;s working today?</h2>
-    <p>Pick your name &mdash; Marketing Tracker editing is limited to the four editors; everyone can use Work Tracker.</p>
     <div class="identity-grid" id="identity-grid"></div>
   </div>
 </div>
@@ -420,13 +419,12 @@
       </div>
     </nav>
     <div class="sidebar-footer">
-      <div class="sidebar-note">&#128161; Uniqable &mdash; live task data from work-tracker-drab.vercel.app, now inside the Team Workspace shell. Anyone can edit here.</div>
     </div>
   </aside>
   <main class="main">
 
     <div class="wt-section active" id="wt-view-tasks">
-      <div class="topbar"><div class="title-block"><h1>Work Tracker</h1><p>&#128161; Uniqable &middot; live data, everyone can edit</p></div></div>
+      <div class="topbar"><div class="title-block"><h1>Work Tracker</h1></div></div>
 
       <div class="health-strip">
         <div class="health-card animate-in"><div class="num" style="color:var(--purple)" id="hs-total">&ndash;</div><div class="lbl">Open tasks</div></div>
@@ -469,7 +467,7 @@
         <table>
           <thead><tr>
             <th><input type="checkbox" class="rowcheck" id="select-all" onchange="toggleSelectAll(this.checked)"></th>
-            <th>Date added</th><th>Task</th><th>Category</th><th>POC</th><th>Due</th><th>Assigned</th><th>Priority</th><th>Notes</th><th>Done</th>
+            <th>Task</th><th>Category</th><th>POC</th><th>Due</th><th>Assigned</th><th>Priority</th><th>Notes</th><th>Done</th>
           </tr></thead>
           <tbody id="task-body"></tbody>
         </table>
@@ -589,6 +587,9 @@
     </div>
     <div class="modal-row">
       <div class="modal-field"><label>Category</label><select id="p-category"></select></div>
+      <div class="modal-field"><label>Format</label><select id="p-format"></select></div>
+    </div>
+    <div class="modal-row">
       <div class="modal-field"><label>Region</label><select id="p-region"></select></div>
     </div>
     <div class="modal-row">
@@ -667,14 +668,8 @@
     <section class="section-view active" id="view-calendar">
       <div id="social-banner-slot"></div>
       <div class="topbar cal-topbar">
-        <div class="month-nav cal-month-nav"><button onclick="calShift(-1)">&#8249;</button><span id="month-label">&ndash;</span><button onclick="calShift(1)">&#8250;</button><button class="chart-reset-btn" onclick="calToday()" style="margin-left:6px;">Today</button></div>
-        <div class="view-toggle" id="cal-view-toggle">
-          <button data-mode="week" onclick="setCalViewMode('week')">This week</button>
-          <button data-mode="month" class="active" onclick="setCalViewMode('month')">This month</button>
-        </div>
-      </div>
-      <div class="cal-actions-row">
         <button type="button" class="add-task-btn social-editable" id="add-post-btn" onclick="openPostModal(todayISO(), null)">+ Add post</button>
+        <div class="month-nav cal-month-nav" style="position:absolute;left:50%;transform:translateX(-50%);"><button onclick="calShift(-1)">&#8249;</button><span id="month-label">&ndash;</span><button onclick="calShift(1)">&#8250;</button><button class="chart-reset-btn" onclick="calToday()" style="margin-left:6px;">Today</button></div>
         <div class="view-toggle"><button class="active">Calendar</button><button onclick="switchSocialView('list')">List</button></div>
       </div>
       <div class="health-strip">
@@ -706,7 +701,7 @@
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Date</th><th>Platforms</th><th>Caption</th><th>Category</th><th>Owner</th><th>Status</th><th></th></tr></thead>
+          <thead><tr><th>Date</th><th>Caption</th><th>Category</th><th>Owner</th><th>Status</th><th></th></tr></thead>
           <tbody id="list-body"></tbody>
         </table>
       </div>
@@ -742,9 +737,9 @@
 /* =========================================================================
    CONFIG — real domain data, matching each tracker's actual backend schema.
    ========================================================================= */
-const ASSIGNEES = ["Damini","Harshada","Jimmy","Prachi","Saniya","Twinkle"]; // Work Tracker identity pool
+const ASSIGNEES = ["Damini","Harshada","Jimmy","Prachi","Saniya","Simran","Twinkle"]; // Work Tracker identity pool
 const EDITORS = ["Damini","Jimmy","Twinkle","Prachi"]; // Marketing Tracker edit gate (subset of ASSIGNEES)
-const PEOPLE_COLOR = {Damini:"#B31E7D",Harshada:"#0E8F7D",Jimmy:"#7A4FBE",Prachi:"#D97706",Saniya:"#D9524B",Twinkle:"#2B8FD9"};
+const PEOPLE_COLOR = {Damini:"#B31E7D",Harshada:"#0E8F7D",Jimmy:"#7A4FBE",Prachi:"#D97706",Saniya:"#D9524B",Simran:"#7C3AED",Twinkle:"#2B8FD9"};
 
 const WT_CATEGORIES = [
   {name:"Decks", emoji:"📊", color:"#6366f1"},
@@ -762,6 +757,7 @@ const PRIORITY_META = {
 };
 
 const MKT_CATEGORIES = ["People News","Event","Thought Leadership","Awards","Podcast","New Service/Asset","Existing Service/Asset","Partnership/Client","Other"];
+const FORMATS = ["Carousel","Static","Video"];
 const PLATFORMS = ["LinkedIn","Instagram","X","YouTube","Website"];
 const REGIONS = ["India","USA","UAE","KSA","Qatar","Middle East","Global"];
 const STATUSES = ["Planned","In progress","Ready","Posted"];
@@ -919,14 +915,13 @@ function renderTasks(){
   const body=document.getElementById('task-body');
   const list=visibleTasks();
   if(list.length===0){
-    body.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--ink-soft);padding:22px;">No tasks match these filters.</td></tr>';
+    body.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--ink-soft);padding:22px;">No tasks match these filters.</td></tr>';
   } else {
     body.innerHTML = list.map(t=>{
       const overdue=isOverdue(t);
       const rowSel=selectedTasks.has(t.id);
       return '<tr class="'+(overdue?'overdue':'')+' '+(rowSel?'row-selected':'')+'" data-id="'+t.id+'">'
         + '<td><input type="checkbox" class="rowcheck" '+(rowSel?'checked':'')+' onchange="toggleRowSelect('+t.id+', this.checked)"></td>'
-        + '<td class="added-date">'+fmtDate(t.task_date)+'</td>'
         + '<td class="cell-name" data-id="'+t.id+'"></td>'
         + '<td class="cell-category" data-id="'+t.id+'"></td>'
         + '<td class="cell-poc" data-id="'+t.id+'"></td>'
@@ -944,7 +939,7 @@ function renderTasks(){
       makeEditable(tr.querySelector('.cell-due'), fmtDate(t.due_date), '<input class="cell-input" type="date" value="'+(t.due_date||'')+'">', v=>editTask(t.id,'due_date',v));
       const ownerTd=tr.querySelector('.cell-owner');
       ownerTd.innerHTML = '<button type="button" class="owner-trigger" style="border-color:transparent;" onclick="openOwnerPop(this, '+t.id+')">'+(t.assigned_to||'—')+'</button>';
-      makeEditable(tr.querySelector('.cell-priority'), priorityPillHtml(t.priority), '<select class="cell-select">'+priorityOptions(t.priority)+'</select>', v=>editTask(t.id,'priority',v));
+      makeEditable(tr.querySelector('.cell-priority'), '<span style="font-size:16px;" title="'+t.priority+' priority">'+(PRIORITY_META[t.priority]?PRIORITY_META[t.priority].emoji:'')+'</span>', '<select class="cell-select">'+priorityOptions(t.priority)+'</select>', v=>editTask(t.id,'priority',v));
       makeEditable(tr.querySelector('.cell-notes'), '<span class="notes-cell" title="'+escapeAttr(t.notes||'')+'">'+escapeHtml(t.notes||'—')+'</span>', '<input class="cell-input" value="'+escapeAttr(t.notes||'')+'">', v=>editTask(t.id,'notes',v));
     });
   }
@@ -1387,11 +1382,11 @@ function renderList(){
   const body=document.getElementById('list-body');
   body.innerHTML = list.length ? list.map(p=>
     '<tr style="cursor:pointer;" onclick="openPostModal(\''+p.scheduled_date+'\', '+p.id+')">'
-    + '<td>'+p.scheduled_date+'</td><td>'+(p.platforms||[]).map(platIcon).join(' ')+'</td>'
+    + '<td>'+p.scheduled_date+'</td>'
     + '<td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escapeHtml(p.caption||'(no caption)')+'</td>'
     + '<td>'+(p.category||'—')+'</td><td>'+(p.owner||'—')+'</td>'
     + '<td><span class="status-badge '+statusSlug(p.status)+'">'+(isAtRisk(p)?'At risk':p.status)+'</span></td><td></td></tr>'
-  ).join('') : '<tr><td colspan="7" style="text-align:center;color:var(--ink-soft);padding:22px;">No entries match these filters.</td></tr>';
+  ).join('') : '<tr><td colspan="6" style="text-align:center;color:var(--ink-soft);padding:22px;">No entries match these filters.</td></tr>';
 }
 
 /* ---- idea backlog ---- */
@@ -1520,6 +1515,7 @@ function renderSocialPermissions(){
    ========================================================================= */
 let postModalTarget = null; // {dateStr, id} — id null means creating new
 function socialCategoryOptions(selected){ return '<option value="">—</option>' + MKT_CATEGORIES.map(c=>'<option value="'+c+'" '+(c===selected?'selected':'')+'>'+c+'</option>').join(''); }
+function socialFormatOptions(selected){ return '<option value="">—</option>' + FORMATS.map(f=>'<option value="'+f+'" '+(f===selected?'selected':'')+'>'+f+'</option>').join(''); }
 function socialRegionOptions(selected){ return '<option value="">—</option>' + REGIONS.map(r=>'<option value="'+r+'" '+(r===selected?'selected':'')+'>'+r+'</option>').join(''); }
 function socialOwnerOptions(selected){ return '<option value="">— Unassigned —</option>' + EDITORS.map(o=>'<option value="'+o+'" '+(o===selected?'selected':'')+'>'+o+'</option>').join(''); }
 function checkCaptionStyle(caption){
@@ -1533,9 +1529,10 @@ function checkCaptionStyle(caption){
 function openPostModal(dateStr, id, prefill){
   postModalTarget = {dateStr, id};
   document.getElementById('p-category').innerHTML = socialCategoryOptions();
+  document.getElementById('p-format').innerHTML = socialFormatOptions();
   document.getElementById('p-region').innerHTML = socialRegionOptions();
   document.getElementById('p-owner').innerHTML = socialOwnerOptions(currentUser && EDITORS.includes(currentUser) ? currentUser : '');
-  document.getElementById('p-platform-checks').innerHTML = PLATFORMS.map(p=>'<label><input type="checkbox" value="'+p+'" id="p-plat-'+p+'"> '+platIcon(p)+' '+p+'</label>').join('');
+  document.getElementById('p-platform-checks').innerHTML = PLATFORMS.map(p=>'<label><input type="checkbox" value="'+p+'" id="p-plat-'+p+'"> '+p+'</label>').join('');
   document.querySelectorAll('#post-modal .modal-field').forEach(f=>f.classList.remove('has-error'));
   document.getElementById('p-style-warning').style.display='none';
 
@@ -1553,6 +1550,7 @@ function openPostModal(dateStr, id, prefill){
     document.getElementById('p-status').value = p.status;
     PLATFORMS.forEach(pl=> document.getElementById('p-plat-'+pl).checked = (p.platforms||[]).includes(pl));
     document.getElementById('p-category').value = p.category||'';
+    document.getElementById('p-format').value = p.format||'';
     document.getElementById('p-region').value = p.region||'';
     document.getElementById('p-owner').value = p.owner||'';
     document.getElementById('p-livelink').value = p.post_live_link||'';
@@ -1571,6 +1569,7 @@ function openPostModal(dateStr, id, prefill){
     document.getElementById('p-status').value = 'Planned';
     PLATFORMS.forEach(pl=> document.getElementById('p-plat-'+pl).checked=false);
     document.getElementById('p-category').value='';
+    document.getElementById('p-format').value='';
     document.getElementById('p-region').value='';
     document.getElementById('p-livelink').value='';
     document.getElementById('p-creative-notes').value='';
@@ -1607,6 +1606,7 @@ function collectPostPayload(){
     status: document.getElementById('p-status').value,
     platforms,
     category: document.getElementById('p-category').value || null,
+    format: document.getElementById('p-format').value || null,
     region: document.getElementById('p-region').value || null,
     owner: document.getElementById('p-owner').value,
     post_live_link: document.getElementById('p-livelink').value.trim() || null,
