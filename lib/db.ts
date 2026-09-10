@@ -10,6 +10,8 @@ import type {
   RecurringRule,
   WorkTask,
   WorkTaskInput,
+  TeamMember,
+  TeamMemberInput,
 } from "./types";
 
 // Works with any Postgres provider (Vercel's Neon-backed Postgres, Supabase,
@@ -132,6 +134,9 @@ export async function ensureSchema(): Promise<void> {
         id SERIAL PRIMARY KEY, task_date TEXT, task TEXT NOT NULL, category TEXT, poc TEXT,
         due_date TEXT, assigned_to TEXT, priority TEXT NOT NULL DEFAULT 'Low', notes TEXT,
         archived_at TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS team_members (
+        id SERIAL PRIMARY KEY, name TEXT NOT NULL UNIQUE, color TEXT NOT NULL, created_at TEXT NOT NULL
       );
     `).then(() => undefined);
   }
@@ -630,5 +635,45 @@ export async function updateWorkTask(
 export async function deleteWorkTask(id: number): Promise<boolean> {
   await ensureSchema();
   const { rowCount } = await pool.query("DELETE FROM work_tasks WHERE id = $1;", [id]);
+  return (rowCount ?? 0) > 0;
+}
+
+// ---------- Team members (Work Tracker identity/assignee pool) ----------
+
+// Deterministic-ish palette cycled through when a new member is added
+// without an explicit color -- keeps colors visually distinct from the
+// existing seed set without needing any design input from the caller.
+const MEMBER_COLOR_PALETTE = [
+  "#B31E7D", "#0E8F7D", "#7A4FBE", "#D97706", "#D9524B", "#7C3AED", "#2B8FD9",
+  "#059669", "#DB2777", "#4338CA", "#B45309", "#0891B2", "#BE185D", "#65A30D",
+];
+
+export async function listTeamMembers(): Promise<TeamMember[]> {
+  await ensureSchema();
+  const { rows } = await pool.query("SELECT * FROM team_members ORDER BY id ASC;");
+  return rows as TeamMember[];
+}
+
+export async function countTeamMembers(): Promise<number> {
+  await ensureSchema();
+  const { rows } = await pool.query("SELECT COUNT(*)::int AS c FROM team_members;");
+  return rows[0].c as number;
+}
+
+export async function createTeamMember(input: TeamMemberInput): Promise<TeamMember> {
+  await ensureSchema();
+  const now = new Date().toISOString();
+  const existing = await listTeamMembers();
+  const color = input.color || MEMBER_COLOR_PALETTE[existing.length % MEMBER_COLOR_PALETTE.length];
+  const { rows } = await pool.query(
+    `INSERT INTO team_members (name, color, created_at) VALUES ($1,$2,$3) RETURNING *;`,
+    [input.name.trim(), color, now]
+  );
+  return rows[0] as TeamMember;
+}
+
+export async function deleteTeamMember(id: number): Promise<boolean> {
+  await ensureSchema();
+  const { rowCount } = await pool.query("DELETE FROM team_members WHERE id = $1;", [id]);
   return (rowCount ?? 0) > 0;
 }

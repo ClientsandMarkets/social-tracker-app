@@ -319,6 +319,17 @@
   .chart-filter-bar{display:flex;align-items:center;justify-content:space-between;margin-top:18px;margin-bottom:2px;flex-wrap:wrap;gap:8px;}
   .chart-active-pill{background:var(--lavender);color:var(--purple-deep);font-size:11.5px;font-weight:600;padding:5px 12px;border-radius:20px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);}
   .chart-active-pill:hover{background:#EAE5F3;}
+
+  .manage-team-panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;margin-top:18px;}
+  .manage-team-panel h3{margin:0 0 4px;font-family:'Montserrat',sans-serif;font-size:13px;color:var(--purple-deep);}
+  .manage-team-panel .hint{margin:0 0 12px;font-size:11.5px;color:var(--ink-soft);}
+  .manage-team-list{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
+  .mt-chip{display:inline-flex;align-items:center;gap:6px;background:var(--lavender);border:1px solid var(--line);border-radius:20px;padding:5px 6px 5px 10px;font-size:12.5px;font-weight:600;color:var(--ink);}
+  .mt-chip .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .mt-remove{border:none;background:rgba(0,0,0,0.06);color:var(--ink-soft);width:18px;height:18px;border-radius:50%;cursor:pointer;font-size:13px;line-height:1;display:flex;align-items:center;justify-content:center;}
+  .mt-remove:hover{background:#FBE3DF;color:var(--risk);}
+  .manage-team-add{display:flex;gap:8px;max-width:360px;}
+  .manage-team-add input{flex:1;padding:8px 12px;border:1px solid var(--line);border-radius:8px;font-size:13px;}
   .chart-reset-btn{border:1px solid var(--line);background:#fff;color:var(--ink-soft);font-size:11px;font-weight:600;padding:5px 11px;border-radius:8px;cursor:pointer;transition:background .15s;}
   .chart-reset-btn:hover{background:var(--lavender);}
 
@@ -519,6 +530,16 @@
             </div>
           </div>
           <div class="vchart-labels" id="labels-category"></div>
+        </div>
+      </div>
+
+      <div class="manage-team-panel">
+        <h3>Manage team</h3>
+        <p class="hint">Add or remove people from the assignee list &mdash; filters and the charts above update immediately.</p>
+        <div class="manage-team-list" id="manage-team-list"></div>
+        <div class="manage-team-add">
+          <input type="text" id="manage-team-input" placeholder="Add a name&hellip;" onkeydown="if(event.key==='Enter') addTeamMember();">
+          <button type="button" class="btn btn-primary" onclick="addTeamMember()">Add</button>
         </div>
       </div>
     </div>
@@ -732,9 +753,16 @@
 /* =========================================================================
    CONFIG — real domain data, matching each tracker's actual backend schema.
    ========================================================================= */
-const ASSIGNEES = ["Damini","Harshada","Jimmy","Prachi","Saniya","Simran","Twinkle"]; // Work Tracker identity pool
-const EDITORS = ["Damini","Jimmy","Twinkle","Prachi"]; // Marketing Tracker edit gate (subset of ASSIGNEES)
-const PEOPLE_COLOR = {Damini:"#B31E7D",Harshada:"#0E8F7D",Jimmy:"#7A4FBE",Prachi:"#D97706",Saniya:"#D9524B",Simran:"#7C3AED",Twinkle:"#2B8FD9"};
+// ASSIGNEES/PEOPLE_COLOR are no longer hardcoded -- they're loaded from
+// /api/members (see loadTeamMembers()) so the roster can be edited from the
+// "Manage team" panel at the bottom of the Work Tracker without a code
+// change. teamMembers keeps the raw {id,name,color} rows for the manage-team
+// list (need the id to delete); ASSIGNEES/PEOPLE_COLOR are derived from it
+// for everything else (filters, charts, identity grid, owner picker).
+let teamMembers = [];
+let ASSIGNEES = [];
+let EDITORS = ["Damini","Jimmy","Twinkle","Prachi"]; // Marketing Tracker edit gate (subset of ASSIGNEES)
+let PEOPLE_COLOR = {};
 
 const WT_CATEGORIES = [
   {name:"Brochure", emoji:"📘", color:"#7c3aed"},
@@ -782,6 +810,67 @@ function fmtDate(iso){ if(!iso) return '—'; const d=parseLocalDate(iso); retur
 let currentUser = null;
 const lastUsedView = {};
 function isMktEditor(){ return EDITORS.includes(currentUser); }
+
+async function loadTeamMembers(){
+  try{
+    const res = await fetch('/api/members');
+    teamMembers = await res.json();
+  }catch(e){
+    teamMembers = [];
+    showToast('Could not load the team list — ' + e.message, true);
+  }
+  ASSIGNEES = teamMembers.map(m=>m.name);
+  PEOPLE_COLOR = {};
+  teamMembers.forEach(m=>{ PEOPLE_COLOR[m.name] = m.color; });
+  buildIdentityGrid();
+  renderManageTeam();
+}
+function renderManageTeam(){
+  const list = document.getElementById('manage-team-list');
+  if(!list) return;
+  list.innerHTML = teamMembers.map(m=>
+    '<div class="mt-chip" style="--c:'+m.color+'">'
+    + '<span class="dot" style="background:'+m.color+'"></span>'
+    + '<span class="nm">'+escapeHtml(m.name)+'</span>'
+    + '<button type="button" class="mt-remove" title="Remove '+escapeAttr(m.name)+'" onclick="removeTeamMember('+m.id+',\''+escapeAttr(m.name)+'\')">&times;</button>'
+    + '</div>'
+  ).join('') || '<span style="color:var(--ink-soft);font-size:12.5px;">No team members yet.</span>';
+}
+async function addTeamMember(){
+  const input = document.getElementById('manage-team-input');
+  const name = input.value.trim();
+  if(!name) return;
+  try{
+    const res = await fetch('/api/members', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name}) });
+    if(!res.ok){ const j=await res.json().catch(()=>({})); throw new Error(j.error||'Could not add that name.'); }
+    const created = await res.json();
+    teamMembers.push(created);
+    ASSIGNEES = teamMembers.map(m=>m.name);
+    PEOPLE_COLOR[created.name] = created.color;
+    input.value='';
+    buildIdentityGrid();
+    renderManageTeam();
+    populateFilterDropdowns();
+    renderQuickFilterAvatars();
+    renderCharts();
+    showToast(name+' added to the team.');
+  }catch(e){ showToast(e.message, true); }
+}
+async function removeTeamMember(id, name){
+  if(!confirm('Remove '+name+' from the team list? Existing tasks/posts already assigned to them keep their name, they just won\'t be selectable anymore.')) return;
+  try{
+    const res = await fetch('/api/members/'+id, { method:'DELETE' });
+    if(!res.ok){ const j=await res.json().catch(()=>({})); throw new Error(j.error||'Could not remove that name.'); }
+    teamMembers = teamMembers.filter(m=>m.id!==id);
+    ASSIGNEES = teamMembers.map(m=>m.name);
+    delete PEOPLE_COLOR[name];
+    buildIdentityGrid();
+    renderManageTeam();
+    populateFilterDropdowns();
+    renderQuickFilterAvatars();
+    renderCharts();
+  }catch(e){ showToast(e.message, true); }
+}
 
 function buildIdentityGrid(){
   document.getElementById('identity-grid').innerHTML = ASSIGNEES.map(p=>
@@ -1749,9 +1838,7 @@ function closePanel(){ document.getElementById('overlay').classList.remove('show
 /* =========================================================================
    INIT
    ========================================================================= */
-buildIdentityGrid();
-loadTasks();
-loadMarketing();
+loadTeamMembers().then(()=>{ loadTasks(); loadMarketing(); });
 </script>
 </body>
 </html>

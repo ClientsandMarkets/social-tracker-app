@@ -172,3 +172,15 @@ export type WorkTask = {
   updated_at: string;
 };
 export type WorkTaskInput = Partial<Omit<WorkTask, "id" | "created_at" | "updated_at" | "archived_at">>;
+
+// Team member pool — the assignable/identity names for Work Tracker (and the
+// name-picker login). Editable at runtime via /api/members so the team can
+// add or remove people without a code change; charts and filters read this
+// list live instead of a hardcoded array.
+export type TeamMember = {
+  id: number;
+  name: string;
+  color: string; // hex, used for avatars/chart bars
+  created_at: string;
+};
+export type TeamMemberInput = { name: string; color?: string | null };
